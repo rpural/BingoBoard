@@ -12,6 +12,8 @@ from PyQt5.QtCore import Qt
 
 from PyQt5.QtGui import QFont
 
+import datetime
+
 class BingoBoard (QMainWindow):
     def __init__(self):
         self.value_labels = [None,]
@@ -69,7 +71,8 @@ class BingoBoard (QMainWindow):
 
 class Interactive_Window (QMainWindow):
     calls = {}
-    called_numbers = []
+    called_numbers = list()
+    called_numbers.append(datetime.datetime.now().strftime("%m/%d/%Y-%H:%M"))
 
     def __init__(self):
         super().__init__()
@@ -114,7 +117,8 @@ class Interactive_Window (QMainWindow):
     def clear_board(self):
         with open("game.record","a") as record:
             print(self.called_numbers, file=record)
-            called_numbers = []
+            self.called_numbers = list()
+            self.called_numbers.append(datetime.datetime.now().strftime("%m/%d/%Y-%H:%M"))
 
         for i in range(1, 76):
             window.value_labels[int(i)].setStyleSheet("border: 2px solid")
@@ -132,7 +136,5 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = BingoBoard()
     interactive = Interactive_Window()
-
-    exit(app.exec())
 
     exit(app.exec())
