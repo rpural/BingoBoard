@@ -25,6 +25,11 @@ class BingoBoard (QMainWindow):
         center = QWidget()
         center.setLayout(lay_rows)
         self.setCentralWidget(center)
+        title = QLabel("Knights of Columbus council 3660       Bingo Night")
+        title.setFont(QFont('Times New Roman', 60))
+        title.setStyleSheet("border: 4px solid")
+        lay_rows.addWidget(title)
+
         for base, row in enumerate(("B", "I", "N", "G", "O")):
             lay_row = QHBoxLayout()
             row_label = QLabel(row)
@@ -41,6 +46,7 @@ class BingoBoard (QMainWindow):
                 self.value_labels.append(call)
             lay_row.setSpacing(10)
             lay_rows.addLayout(lay_row)
+
         lay_row = QHBoxLayout()
         lay_row.setSpacing(30)
         row_label = QLabel("Currently called:")
@@ -63,6 +69,7 @@ class BingoBoard (QMainWindow):
 
 class Interactive_Window (QMainWindow):
     calls = {}
+    called_numbers = []
 
     def __init__(self):
         super().__init__()
@@ -102,8 +109,13 @@ class Interactive_Window (QMainWindow):
         self.call.setText("")
         window.value_labels[int(call_value)].setStyleSheet("color: black; background: white; border: 2px solid")
         window.current_call.setText(self.ball(int(call_value)))
+        self.called_numbers.append(call_value)
 
     def clear_board(self):
+        with open("game.record","a") as record:
+            print(self.called_numbers, file=record)
+            called_numbers = []
+
         for i in range(1, 76):
             window.value_labels[int(i)].setStyleSheet("border: 2px solid")
             window.current_call.setText("")
@@ -120,5 +132,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = BingoBoard()
     interactive = Interactive_Window()
+
+    exit(app.exec())
 
     exit(app.exec())
