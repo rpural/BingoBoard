@@ -27,10 +27,16 @@ class BingoBoard (QMainWindow):
         center = QWidget()
         center.setLayout(lay_rows)
         self.setCentralWidget(center)
-        title = QLabel("Knights of Columbus council 3660       Bingo Night")
-        title.setFont(QFont('Times New Roman', 60))
-        title.setStyleSheet("border: 4px solid")
-        lay_rows.addWidget(title)
+        lay_row = QHBoxLayout()
+        self.screen_title = QLabel(screen_title_text)
+        self.screen_title.setFont(QFont('Times New Roman', 60))
+        self.screen_title.setAlignment(Qt.AlignCenter)
+        lay_row.addWidget(self.screen_title)
+        self.game_title = QLabel(game_title_text)
+        self.game_title.setFont(QFont('Arial', 60))
+        self.game_title.setAlignment(Qt.AlignCenter)
+        lay_row.addWidget(self.game_title)
+        lay_rows.addLayout(lay_row)
 
         for base, row in enumerate(("B", "I", "N", "G", "O")):
             lay_row = QHBoxLayout()
@@ -84,6 +90,16 @@ class Interactive_Window (QMainWindow):
             self.calls[i+15*3] = "G"
             self.calls[i+15*4] = "O"
 
+        window_layout = QVBoxLayout()
+        layout = QHBoxLayout()
+        prompt = QLabel("Enter game title: ")
+        layout.addWidget(prompt)
+        self.game_title_entry = QLineEdit()
+        self.game_title_entry.setMaxLength(20)
+        layout.addWidget(self.game_title_entry)
+        self.game_title_commit = QPushButton("Set Title")
+        layout.addWidget(self.game_title_commit)
+        window_layout.addLayout(layout)
         layout = QHBoxLayout()
         prompt = QLabel("Enter called number: ")
         layout.addWidget(prompt)
@@ -96,16 +112,24 @@ class Interactive_Window (QMainWindow):
         layout.addWidget(self.clear)
         self.exit_program = QPushButton("Exit")
         layout.addWidget(self.exit_program)
+        window_layout.addLayout(layout)
         center = QWidget()
-        center.setLayout(layout)
+        center.setLayout(window_layout)
         self.setCentralWidget(center)
 
+        self.game_title_entry.returnPressed.connect(self.commit_game_title)
+        self.game_title_commit.clicked.connect(self.commit_game_title)
         self.call.returnPressed.connect(self.commit_call)
         self.commit.clicked.connect(self.commit_call)
         self.clear.clicked.connect(self.clear_board)
         self.exit_program.clicked.connect(self.done)
 
         self.show()
+
+    def commit_game_title(self):
+        call_value = self.game_title_entry.text()
+        self.game_title_entry.setText("")
+        window.game_title.setText(call_value)
 
     def commit_call(self):
         call_value = int(self.call.text())
@@ -125,6 +149,9 @@ class Interactive_Window (QMainWindow):
             window.current_call.setText("")
 
     def done(self):
+        if len(self.called_numbers) > 1:
+            with open("game.record","a") as record:
+                print(self.called_numbers, file=record)
         exit(0)
 
     def ball(self, number):
@@ -133,7 +160,12 @@ class Interactive_Window (QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    if len(sys.argv) > 1:
+        screen_title_text = sys.argv[1]
+    else:
+        screen_title_text = "Knights of Columbus 3660"
+    game_title_text = "Bingo Night"
+    app = QApplication([])
     window = BingoBoard()
     interactive = Interactive_Window()
 
