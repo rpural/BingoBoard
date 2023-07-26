@@ -132,11 +132,15 @@ class Interactive_Window (QMainWindow):
         window.game_title.setText(call_value)
 
     def commit_call(self):
-        call_value = int(self.call.text())
+        call_value = self.call.text()
+        if not call_value.isdigit():
+            call_value = call_value[1:]
+        if call_value.isdigit():
+            call_value = int(call_value)
+            window.value_labels[int(call_value)].setStyleSheet("color: black; background: white; border: 2px solid")
+            window.current_call.setText(self.ball(int(call_value)))
+            self.called_numbers.append(call_value)
         self.call.setText("")
-        window.value_labels[int(call_value)].setStyleSheet("color: black; background: white; border: 2px solid")
-        window.current_call.setText(self.ball(int(call_value)))
-        self.called_numbers.append(call_value)
 
     def clear_board(self):
         with open("game.record","a") as record:
