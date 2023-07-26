@@ -126,6 +126,7 @@ class Interactive_Window (QMainWindow):
         self.exit_program.clicked.connect(self.done)
 
         self.show()
+        self.call.setFocus()
 
     def commit_game_title(self):
         call_value = self.game_title_entry.text()
@@ -177,9 +178,13 @@ if __name__ == '__main__':
     game_title_text = "Bingo Night"
     app = QApplication([])
     window = BingoBoard()
+
     interactive = Interactive_Window()
+    sg = app.desktop().screenGeometry(interactive)
+    wingeo = interactive.geometry()
+    x = sg.width() - wingeo.width() - 30
+    y = sg.height() - wingeo.height() - 100
+    interactive.move(x, y)
 
     exit(app.exec())
-w()
 
-    exit(app.exec())
