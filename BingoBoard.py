@@ -1,4 +1,4 @@
-# /usr/bin/env python3
+#! /usr/bin/env python3
 import sys
 from PyQt5.QtWidgets import ( QApplication,
     QWidget,
@@ -176,7 +176,9 @@ if __name__ == '__main__':
     else:
         screen_title_text = "Knights of Columbus 3660"
     game_title_text = "Bingo Night"
+
     app = QApplication([])
+
     window = BingoBoard()
 
     interactive = Interactive_Window()
@@ -187,4 +189,3 @@ if __name__ == '__main__':
     interactive.move(x, y)
 
     exit(app.exec())
-
