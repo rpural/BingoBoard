@@ -137,9 +137,14 @@ class Interactive_Window (QMainWindow):
             call_value = call_value[1:]
         if call_value.isdigit():
             call_value = int(call_value)
-            window.value_labels[int(call_value)].setStyleSheet("color: black; background: white; border: 2px solid")
-            window.current_call.setText(self.ball(int(call_value)))
-            self.called_numbers.append(call_value)
+            if call_value in self.called_numbers:
+                window.value_labels[call_value].setStyleSheet("border: 2px solid")
+                window.current_call.setText("")
+                self.called_numbers.remove(call_value)
+            else:
+                window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
+                window.current_call.setText(self.ball(int(call_value)))
+                self.called_numbers.append(call_value)
         self.call.setText("")
 
     def clear_board(self):
@@ -172,5 +177,8 @@ if __name__ == '__main__':
     app = QApplication([])
     window = BingoBoard()
     interactive = Interactive_Window()
+
+    exit(app.exec())
+w()
 
     exit(app.exec())
