@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import sys
 from PyQt5.QtWidgets import ( QApplication,
     QWidget,
@@ -84,7 +85,22 @@ class Automatic_Window (QMainWindow):
     def __init__(self):
         super().__init__()
 
-        window_layout = QVBoxLayout()
+        window_layout = QHBoxLayout()
+
+        left_layout = QVBoxLayout()
+        left_layout.setSpacing(30)
+        box_label = QLabel("Current number")
+        box_label.setFont(QFont('Arial', 18))
+        box_label.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(box_label)
+        self.callers_call = QLabel("   ")
+        self.callers_call.setFont(QFont('Arial', 60))
+        self.callers_call.setStyleSheet("border: 2px solid")
+        left_layout.addWidget(self.callers_call)
+
+        window_layout.addLayout(left_layout)
+
+        right_layout = QVBoxLayout()
         layout = QHBoxLayout()
         prompt = QLabel("Enter game title: ")
         layout.addWidget(prompt)
@@ -93,7 +109,7 @@ class Automatic_Window (QMainWindow):
         layout.addWidget(self.game_title_entry)
         self.game_title_commit = QPushButton("Set Title")
         layout.addWidget(self.game_title_commit)
-        window_layout.addLayout(layout)
+        right_layout.addLayout(layout)
 
         layout = QHBoxLayout()
         prompt = QLabel("manual | ")
@@ -111,23 +127,27 @@ class Automatic_Window (QMainWindow):
         self.timing.setAlignment(Qt.AlignHCenter)
         layout.addWidget(self.timing)
         self.call_time = 0
-        window_layout.addLayout(layout)
+        right_layout.addLayout(layout)
 
         layout = QHBoxLayout()
-        self.pause = QPushButton("Start")
+        self.pause = QPushButton("Call")
         layout.addWidget(self.pause)
         self.paused = True
         self.clear = QPushButton("Clear")
         layout.addWidget(self.clear)
         self.exit_program = QPushButton("Exit")
         layout.addWidget(self.exit_program)
-        window_layout.addLayout(layout)
+        right_layout.addLayout(layout)
+
+        window_layout.addLayout(right_layout)
+
         center = QWidget()
         center.setLayout(window_layout)
         self.setCentralWidget(center)
 
         self.call_timer = QTimer()
         self.call_timer.timeout.connect(self.call_timer_pop)
+        self.call_time = 0
 
         self.game_title_entry.returnPressed.connect(self.commit_game_title)
         self.game_title_commit.clicked.connect(self.commit_game_title)
@@ -149,12 +169,22 @@ class Automatic_Window (QMainWindow):
 
     def slider_position(self, t):
         self.call_time = t
-        self.timing.setText("manual" if t == 0 else str(t))
+        if t == 0:
+            self.pause.setText("Call")
+            self.timing.setText("manual")
+            self.paused = True
+        else:
+            self.timing.setText(str(t))
+            if self.paused:
+                self.pause.setText("Start")
+            else:
+                self.pause.setText("Pause")
 
     def call_timer_pop(self):
         call_value = self.current_game.next()
         window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
         window.current_call.setText(self.current_game.ball_name(call_value))
+        self.callers_call.setText(self.current_game.ball_name(call_value))
 
     def pause_toggle(self):
         if self.paused:
@@ -175,11 +205,19 @@ class Automatic_Window (QMainWindow):
         if len(self.current_game):
             self.current_game.game_log(logfile_name)
         self.current_game = bingogame.BingoGame()
-
         # reset the board
         for i in range(1, 76):
             window.value_labels[int(i)].setStyleSheet("border: 2px solid")
             window.current_call.setText("")
+
+        # set the Pause button to a default
+        self.paused = True
+        if self.call_time:
+            self.pause.setText("Start")
+        else:
+            self.pause.setText("Call")
+        self.callers_call.setText(" ")
+
 
     def done(self):
         if len(self.current_game):
