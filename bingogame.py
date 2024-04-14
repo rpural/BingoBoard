@@ -77,6 +77,9 @@ class BingoGame:
         called: {self.called_numbers}
         remaining: {self.uncalled_numbers}
         '''
+  
+    def __len__(self):
+        return len(self.called_numbers)
 
     @classmethod
     def ball_name(cls, value):
