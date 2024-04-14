@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 import sys
 from PyQt5.QtWidgets import ( QApplication,
     QWidget,
@@ -173,7 +172,8 @@ class Automatic_Window (QMainWindow):
 
     def clear_board(self):
         self.call_timer.stop()  # end current game
-        self.current_game.game_log("game.record")
+        if len(self.current_game):
+            self.current_game.game_log(logfile_name)
         self.current_game = bingogame.BingoGame()
 
         # reset the board
@@ -182,8 +182,8 @@ class Automatic_Window (QMainWindow):
             window.current_call.setText("")
 
     def done(self):
-        if len(self.current_game.called_list()):
-            self.current_game.game_log("game.record")
+        if len(self.current_game):
+            self.current_game.game_log(logfile_name)
         exit(0)
 
 
@@ -261,7 +261,7 @@ class Manual_Window (QMainWindow):
         self.call.setText("")
 
     def clear_board(self):
-        with open("game.record","a") as record:
+        with open(logfile_name,"a") as record:
             print(self.called_numbers, file=record)
             self.called_numbers = list()
             self.called_numbers.append(datetime.datetime.now().strftime("%m/%d/%Y-%H:%M"))
@@ -272,7 +272,7 @@ class Manual_Window (QMainWindow):
 
     def done(self):
         if len(self.called_numbers) > 1:
-            with open("game.record","a") as record:
+            with open(logfile_name,"a") as record:
                 print(self.called_numbers, file=record)
         exit(0)
 
@@ -315,6 +315,8 @@ if __name__ == '__main__':
     automatic = args.automatic
     screen_title_text = args.screen_title_text
     game_title_text = args.game_title_text
+
+    logfile_name = str(datetime.date.today()) + ".bingo.logfile"
 
     app = QApplication([])
 
