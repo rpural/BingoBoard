@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import random
+import secrets  # A mre random random number generator than the random module
 import datetime
 
 class BingoGame:
@@ -54,7 +54,7 @@ class BingoGame:
 
     def next(self):
         if len(self.uncalled_numbers) > 0:
-            call = random.choice(self.uncalled_numbers)
+            call = secrets.choice(self.uncalled_numbers)
             self.uncalled_numbers.remove(call)
             self.called_numbers.append(call)
             return call
@@ -77,7 +77,7 @@ class BingoGame:
         called: {self.called_numbers}
         remaining: {self.uncalled_numbers}
         '''
-  
+
     def __len__(self):
         return len(self.called_numbers)
 
