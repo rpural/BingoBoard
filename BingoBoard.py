@@ -181,7 +181,7 @@ class Automatic_Window (QMainWindow):
                 self.pause.setText("Pause")
 
     def call_timer_pop(self):
-        call_value = self.current_game.next()
+        call_value = next(self.current_game)
         window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
         window.current_call.setText(self.current_game.ball_name(call_value))
         self.callers_call.setText(self.current_game.ball_name(call_value))
