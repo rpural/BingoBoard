@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import secrets  # A mre random random number generator than the random module
+import secrets  # A more random random number generator than the random module
 import datetime
 
 class BingoGame:
@@ -33,6 +33,13 @@ class BingoGame:
     # the associated letters for each number
 
     def __init__(self):
+        '''
+            Create a new Bingo game. Populate the potential
+            calls list with the numbers from 1 through 75,
+            and create an empty called numbers list.
+            Populate the calls list with the letters associated
+            with each number.
+        '''
         self.uncalled_numbers = list(range(1, 76))
         # initially, the list of values, from 1 to 75
 
@@ -47,12 +54,18 @@ class BingoGame:
             self.calls[i+15*4] = "O"
 
     def __iter__(self):
+        '''
+            The object itself is an iterator. Defining __iter__()
+            just implements the protocol required for an iterator.
+        '''
         return self
 
     def __next__(self):
-        return self.next()
-
-    def next(self):
+        '''
+            Generate the next number to be called, remove from
+            the uncalled list and add it to the called list.
+            Return the number to be called.
+        '''
         if len(self.uncalled_numbers) > 0:
             call = secrets.choice(self.uncalled_numbers)
             self.uncalled_numbers.remove(call)
@@ -62,9 +75,19 @@ class BingoGame:
             raise StopIteration
 
     def called_list(self):
+        '''
+            Return a list of all the numbers currently called
+            using this instantiation of the object.
+        '''
         return self.called_numbers
 
     def game_log(self, filename=None):
+        '''
+            For use at the end of a game, write a timestamp and the
+            called numbers for the game to a log file if a filename
+            is given. Otherwise, just return the log line to the
+            caller.
+        '''
         log_line = f"{[datetime.datetime.now().strftime("%m/%d/%Y-%H:%M")] + self.called_list()}"
         if filename:
             with open(filename, "a") as logfile:
@@ -73,20 +96,36 @@ class BingoGame:
             return log_line
 
     def __str__(self):
+        '''
+            Return the lists of called and uncalled numbers.
+        '''
         return f'''
         called: {self.called_numbers}
         remaining: {self.uncalled_numbers}
         '''
 
     def __len__(self):
+        '''
+            Return the count of numbers that have been called.
+            One use is to see if a log file needs to be written.
+        '''
         return len(self.called_numbers)
 
     @classmethod
     def ball_name(cls, value):
-        return f"{cls.calls[value]}{value}"
+        '''
+            Given a number between 1 and 75, add the proper
+            letter to make it into a Bingo ball name. For values
+            out of range, just return the number as a string.
+        '''
+        return f"{cls.calls[value]}{value}" if 1 <= value <= 75 else \
+            str(value)
 
 
 if __name__ == "__main__":
+    '''
+        If run directly, test the various methods.
+    '''
     game = BingoGame()
 
     i = 0
@@ -107,3 +146,7 @@ if __name__ == "__main__":
 
     print(game)
     print(game.game_log())
+
+    print("Various calls to ball_name:",
+        BingoGame.ball_name(1), BingoGame.ball_name(75),
+        BingoGame.ball_name(0), BingoGame.ball_name(76))
