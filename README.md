@@ -1,5 +1,5 @@
 # BingoBoard
-Project: Create a numbers called board for a Bingo night at the KofC
+Project: Create a numbers called board for a Bingo night at the Knights of Columbus
 
 ![image](bingoboard.png)
 
@@ -17,4 +17,14 @@ A more robust command line syntax is implemented, allowing for both displaying n
 (like with a traditional ball tumbler) or for running the game entirely generating random calls within the
 program. Options are implemented to change the page header title and message.
 
-This program uses PyQt5 to format the displays. All code is Copyright Robert P. Nix, 2023, 2024
+There is a separate window for entering the called numbers, clearing the board, and exiting the program. When calling
+numbers automatically, the time between calls can be changed, and the calls can be paused (like when checking a
+winning card). In addition, for manual calling, the numbers in the main window are clickable, allowing the main window
+to be used without needing the separate window. Buttons are also available in the main window to clear the board and to
+exit the program.
+
+Logs are produced containing the date and time of each game, and the numbers called during the game.
+
+-----
+
+This program uses PyQt5 to format the displays. All code is Copyright Robert P. Nix, 2023 - 2025
