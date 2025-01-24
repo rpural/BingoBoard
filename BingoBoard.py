@@ -52,10 +52,12 @@ class BingoBoard (QMainWindow):
             row_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             lay_row.addWidget(row_label)
             for i in range(base*15+1, base*15+16):
-                call = QLabel(f"{i:02}")
+                call = QPushButton(f"{i:02}")
+                call.setFixedSize(100,100)
                 call.setFont(QFont('Arial', 60))
                 call.setStyleSheet("border: 2px solid")
-                call.setAlignment(Qt.AlignVCenter)
+                call.clicked.connect(self.call_clicked)
+                #call.setAlignment(Qt.AlignVCenter)
                 lay_row.addWidget(call)
                 self.value_labels.append(call)
             lay_row.setSpacing(10)
@@ -74,11 +76,23 @@ class BingoBoard (QMainWindow):
         spacer = QLabel("                                              ")
         spacer.setFont(QFont('Arial', 60))
         lay_row.addWidget(spacer)
+        clear = QPushButton("Clear")
+        clear.clicked.connect(lambda : interface.clear_board())
+        lay_row.addWidget(clear)
+        done = QPushButton("Exit")
+        done.clicked.connect(lambda : interface.done())
+        lay_row.addWidget(done)
         lay_row.setSpacing(30)
         lay_rows.addLayout(lay_row)
         lay_rows.setSpacing(30)
 
         self.show()
+
+    def call_clicked(self):
+        cell = self.sender()
+        called_number = int(cell.text())
+        print(f"called {called_number}")
+        interface.record_call(called_number)
 
 
 class Automatic_Window (QMainWindow):
@@ -185,6 +199,9 @@ class Automatic_Window (QMainWindow):
         window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
         window.current_call.setText(self.current_game.ball_name(call_value))
         self.callers_call.setText(self.current_game.ball_name(call_value))
+        with open('/tmp/bingo.game', "w") as t:
+            print(f" writing {self.current_game.called_list()}")
+            t.write(f"{self.current_game.called_list()}")
 
     def pause_toggle(self):
         if self.paused:
@@ -288,15 +305,21 @@ class Manual_Window (QMainWindow):
             call_value = call_value[1:]
         if call_value.isdigit():
             call_value = int(call_value)
-            if call_value in self.called_numbers:
-                window.value_labels[call_value].setStyleSheet("border: 2px solid")
-                window.current_call.setText("")
-                self.called_numbers.remove(call_value)
-            else:
-                window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
-                window.current_call.setText(self.ball(int(call_value)))
-                self.called_numbers.append(call_value)
+            self.record_call(call_value)
+
+    def record_call(self, call_value):
+        if call_value in self.called_numbers:
+            window.value_labels[call_value].setStyleSheet("border: 2px solid")
+            window.current_call.setText("")
+            self.called_numbers.remove(call_value)
+        else:
+            window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
+            window.current_call.setText(self.ball(int(call_value)))
+            self.called_numbers.append(call_value)
         self.call.setText("")
+        with open('/tmp/bingo.game', "w") as t:
+            # print(f" writing {self.called_numbers}")
+            print(f"{self.called_numbers}", file=t)
 
     def clear_board(self):
         with open(logfile_name,"a") as record:
