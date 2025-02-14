@@ -91,7 +91,6 @@ class BingoBoard (QMainWindow):
     def call_clicked(self):
         cell = self.sender()
         called_number = int(cell.text())
-        print(f"called {called_number}")
         interface.record_call(called_number)
 
 
@@ -200,7 +199,6 @@ class Automatic_Window (QMainWindow):
         window.current_call.setText(self.current_game.ball_name(call_value))
         self.callers_call.setText(self.current_game.ball_name(call_value))
         with open('/tmp/bingo.game', "w") as t:
-            print(f" writing {self.current_game.called_list()}")
             t.write(f"{self.current_game.called_list()}")
 
     def pause_toggle(self):
@@ -318,7 +316,6 @@ class Manual_Window (QMainWindow):
             self.called_numbers.append(call_value)
         self.call.setText("")
         with open('/tmp/bingo.game', "w") as t:
-            # print(f" writing {self.called_numbers}")
             print(f"{self.called_numbers}", file=t)
 
     def clear_board(self):
