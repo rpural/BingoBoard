@@ -26,7 +26,7 @@ class BingoBoard (QMainWindow):
 
         super().__init__()
 
-        self.setWindowTitle("Bingo Board")
+        self.setWindowTitle("Bingo")
         self.resize(self.screen().size())
 
         lay_rows = QVBoxLayout()
@@ -34,14 +34,20 @@ class BingoBoard (QMainWindow):
         center.setLayout(lay_rows)
         self.setCentralWidget(center)
         lay_row = QHBoxLayout()
+
+        # Event / organization title at top of screen
         self.screen_title = QLabel(screen_title_text)
         self.screen_title.setFont(QFont('Times New Roman', 60))
         self.screen_title.setAlignment(Qt.AlignCenter)
         lay_row.addWidget(self.screen_title)
-        self.game_title = QLabel(game_title_text)
-        self.game_title.setFont(QFont('Arial', 60))
-        self.game_title.setAlignment(Qt.AlignCenter)
-        lay_row.addWidget(self.game_title)
+
+        # Currently called number at top of screen
+        self.current_call = QLabel("")
+        self.current_call.setFixedWidth(280)
+        self.current_call.setFont(QFont('Times New Roman', 128))
+        self.current_call.setAlignment(Qt.AlignCenter)
+        self.current_call.setStyleSheet("color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge")
+        lay_row.addWidget(self.current_call)
         lay_rows.addLayout(lay_row)
 
         for base, row in enumerate(("B", "I", "N", "G", "O")):
@@ -65,15 +71,14 @@ class BingoBoard (QMainWindow):
 
         lay_row = QHBoxLayout()
         lay_row.setSpacing(30)
-        row_label = QLabel("Currently called:")
-        row_label.setFont(QFont('Arial', 60))
-        row_label.setAlignment(Qt.AlignRight)
-        lay_row.addWidget(row_label)
-        self.current_call = QLabel("")
-        self.current_call.setFont(QFont('Arial', 60))
-        self.current_call.setStyleSheet("border: 2px solid")
-        lay_row.addWidget(self.current_call)
-        spacer = QLabel("                                              ")
+
+        # Game title at bottom of screen
+        self.game_title = QLabel(game_title_text)
+        self.game_title.setFont(QFont('Arial', 40))
+        self.game_title.setAlignment(Qt.AlignCenter)
+        lay_row.addWidget(self.game_title)
+
+        spacer = QLabel("                                                                  ")
         spacer.setFont(QFont('Arial', 60))
         lay_row.addWidget(spacer)
         clear = QPushButton("Clear")
