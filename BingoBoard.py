@@ -20,6 +20,8 @@ import argparse
 
 import bingogame # local to project
 
+BingoBoard_version = "4.0"
+
 class BingoBoard (QMainWindow):
     def __init__(self):
         self.value_labels = [None,]
@@ -371,7 +373,7 @@ if __name__ == '__main__':
         help="Controls manual or automatic game.")
 
     parser.add_argument('-v', '--version',
-        action="version", version="%(prog)s 3.0")
+        action="version", version="%(prog)s" + BingoBoard_version)
 
     args = parser.parse_args()
 
