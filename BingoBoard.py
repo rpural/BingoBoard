@@ -373,7 +373,7 @@ if __name__ == '__main__':
         help="Controls manual or automatic game.")
 
     parser.add_argument('-v', '--version',
-        action="version", version="%(prog)s" + BingoBoard_version)
+        action="version", version="%(prog)s " + BingoBoard_version)
 
     args = parser.parse_args()
 
