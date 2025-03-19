@@ -1,14 +1,14 @@
 #! /usr/bin/env python3
-import sys
+
 from PyQt5.QtWidgets import ( QApplication,
     QWidget,
     QLabel,
-    QLineEdit,
     QPushButton,
     QSlider,
     QVBoxLayout,
     QHBoxLayout,
-    QMainWindow )
+    QMainWindow,
+    QInputDialog, )
 
 from PyQt5.QtCore import Qt, QTimer
 
@@ -26,15 +26,6 @@ class BingoWindow (QMainWindow):
     def __init__(self, automatic=False):
         self.value_labels = [None,]
         self.called_numbers = list()
-
-        self.calls = {}
-        for i in range(1,16):
-            self.calls[i] = "B"
-            self.calls[i+15] = "I"
-            self.calls[i+15*2] = "N"
-            self.calls[i+15*3] = "G"
-            self.calls[i+15*4] = "O"
-
 
         super().__init__()
 
@@ -90,13 +81,13 @@ class BingoWindow (QMainWindow):
         self.game_title = QLabel(game_title_text)
         self.game_title.setFont(QFont('Arial', 40))
         self.game_title.setAlignment(Qt.AlignCenter)
+        self.game_title.setFixedWidth(1000)
         lay_row.addWidget(self.game_title)
+        self.change_title = QPushButton("Edit")
+        lay_row.addWidget(self.change_title)
+        self.change_title.clicked.connect(self.new_title)
 
         if automatic:
-            spacer = QLabel("                                           ")
-            spacer.setFont(QFont('Arial', 60))
-            lay_row.addWidget(spacer)
-
             layout = QHBoxLayout()
             prompt = QLabel("manual | ")
             layout.addWidget(prompt)
@@ -126,9 +117,7 @@ class BingoWindow (QMainWindow):
             self.pause.clicked.connect(self.pause_toggle)
 
         else:
-            spacer = QLabel("                                                                  ")
-            spacer.setFont(QFont('Arial', 60))
-            lay_row.addWidget(spacer)
+            self.game_title.setFixedWidth(1500)
 
         self.clear = QPushButton("Clear")
         self.clear.clicked.connect(self.clear_board)
@@ -148,9 +137,10 @@ class BingoWindow (QMainWindow):
 
         self.show()
 
-    def ball(self, number):
-        return f"{self.calls[number]}{number:02}"
-
+    def new_title(self):
+        text, ok = QInputDialog.getText(self, 'Game Title', 'Enter new game title:')
+        if ok:
+            self.game_title.setText(text)
 
     def call_clicked(self):
         cell = self.sender()
@@ -198,11 +188,8 @@ class BingoWindow (QMainWindow):
             self.called_numbers.remove(call_value)
         else:
             window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
-            window.current_call.setText(self.ball(int(call_value)))
+            window.current_call.setText(self.current_game.ball_name(int(call_value)))
             self.called_numbers.append(call_value)
-        with open('/tmp/bingo.game', "w") as t:
-            print(f"{self.called_numbers}", file=t)
-
 
     def clear_board(self):
         self.call_timer.stop()  # end current game
@@ -223,23 +210,26 @@ class BingoWindow (QMainWindow):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog="BingobBoard",
         description="""Fullscreen (TV) display of a Bingo call board, along
-        with a control panel for either manually called games or games called
-        by automation in the program.""",
+        with controls for either manually called games or games called
+        by automation in the program.
+
+        For manual games, called numbers are chosen by clicking on the number
+        on the screen.""",
         epilog="To run, type ./BingoBoard.py")
 
     parser.add_argument('-s', '--screentitle',
         default="Knights of Columbus 3660",
         action="store",
         dest="screen_title_text",
-        metavar='"top left title"',
+        metavar='"top title or message"',
         help="Permanent title displayed on the upper left of the screen. Remains constant during program run.")
 
     parser.add_argument('-t', '--title',
         default="Bingo Night",
         action="store",
         dest="game_title_text",
-        metavar='"top right message"',
-        help="Variable title displayed in the upper right of the screen. Can be changed via control pane.")
+        metavar='"bottom title or message"',
+        help="Variable title displayed in the bottom of the screen. Can be changed via Edit button.")
 
     parser.add_argument('-a', '--automatic',
         action="store_true",
