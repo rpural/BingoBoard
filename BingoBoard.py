@@ -23,7 +23,24 @@ import bingogame # local to project
 BingoBoard_version = "4.0"
 
 class BingoWindow (QMainWindow):
+    '''
+    This class creates and runs the BingoBoard window, displaying
+    the called numbers, and including the buttons and other controls
+    needed to run the game. It has two variations: Manual and Automatic.
+
+    The Automatic mode includes controls for automatically calling random
+    numbers, and a timer to control the time between calls. It can be
+    paused and restarted.
+    '''
     def __init__(self, automatic=False):
+        '''
+        This method creates the layout of the main window.
+
+        If called with automatic=True, the window will include
+        controls for automatic calling of numbers, including a
+        slider to control the time between calls, and a button
+        to start and stop the automatic calling.
+        '''
         self.value_labels = [None,]
         self.called_numbers = list()
 
@@ -138,16 +155,33 @@ class BingoWindow (QMainWindow):
         self.show()
 
     def new_title(self):
+        '''
+        This method displays a dialog box to enter a new game title, which will
+        be displayed at the bottom of the screen. This can be used for a greeting,
+        or to announce a type of game (Four Corners, Blackout, etc.)
+        '''
         text, ok = QInputDialog.getText(self, 'Game Title', 'Enter new game title:')
         if ok:
             self.game_title.setText(text)
 
     def call_clicked(self):
+        '''
+        When a number is clicked on the board, this method is called. It will
+        display the called number in the current call area, and change the
+        style of the button to indicate that it has been called. It will also
+        add the called number to the list of called numbers.
+        '''
         cell = self.sender()
         called_number = int(cell.text())
         self.record_call(called_number)
 
     def slider_position(self, t):
+        '''
+        This method is called when the slider is moved. It will set the
+        time between calls based on the slider position. If the slider
+        is at 0, it will indicate a manual (untimed), random game. Otherwise,
+        it will set the time between calls to the slider value in seconds.
+        '''
         self.call_time = t
         if t == 0:
             self.pause.setText("Call")
@@ -161,6 +195,11 @@ class BingoWindow (QMainWindow):
             self.pause.setText("Pause")
 
     def call_timer_pop(self):
+        '''
+        When running a timed random game, this method is called by the timer.
+        It will call the next number in the game, display it, and update
+        the list of called numbers.
+        '''
         call_value = next(self.current_game)
         window.value_labels[call_value].setStyleSheet("color: black; background: white; border: 2px solid")
         window.current_call.setText(self.current_game.ball_name(call_value))
@@ -168,6 +207,11 @@ class BingoWindow (QMainWindow):
             t.write(f"{self.current_game.called_list()}")
 
     def pause_toggle(self):
+        '''
+        This method is called when the pause button is clicked. It will
+        toggle between pausing and starting the timer. If the game is
+        paused, it will stop the timer and change the button text to "Start".
+        '''
         if self.paused:
             if self.call_time == 0:  # if manual
                 self.call_timer_pop()
@@ -182,6 +226,12 @@ class BingoWindow (QMainWindow):
             self.paused = True
 
     def record_call(self, call_value):
+        '''
+        This method is called when a number is clicked on the board. It will
+        change the style of the button to indicate that it has been called,
+        display the called number in the current call area, and add the
+        called number to the list of called numbers.
+        '''
         if call_value in self.called_numbers:
             window.value_labels[call_value].setStyleSheet("border: 2px solid")
             window.current_call.setText("")
@@ -192,6 +242,11 @@ class BingoWindow (QMainWindow):
             self.called_numbers.append(call_value)
 
     def clear_board(self):
+        '''
+        This method is called when the Clear button is clicked. It will
+        end the current game, log the game if there are called numbers,
+        Record the game to the log, and reset the board for a new game.
+        '''
         self.call_timer.stop()  # end current game
         if len(self.current_game):
             self.current_game.game_log(logfile_name)
@@ -202,12 +257,21 @@ class BingoWindow (QMainWindow):
             window.current_call.setText("")
 
     def done_with_game(self):
+        '''
+        This method is called when the Exit button is clicked. It will
+        end the current game, log the game if there are called numbers,
+        and exit the program.
+        '''
         if len(self.current_game):
             self.current_game.game_log(logfile_name)
         exit(0)
 
 
 if __name__ == '__main__':
+    '''
+    The main program. It parses the command line arguments, creates
+    the BingoWindow, and starts the application.
+    '''
     parser = argparse.ArgumentParser(prog="BingobBoard",
         description="""Fullscreen (TV) display of a Bingo call board, along
         with controls for either manually called games or games called
@@ -217,6 +281,8 @@ if __name__ == '__main__':
         on the screen.""",
         epilog="To run, type ./BingoBoard.py")
 
+    # Accept a title for the top of the screen. This would normally be the
+    # organization name, or event name.
     parser.add_argument('-s', '--screentitle',
         default="Knights of Columbus 3660",
         action="store",
@@ -224,6 +290,8 @@ if __name__ == '__main__':
         metavar='"top title or message"',
         help="Permanent title displayed on the upper left of the screen. Remains constant during program run.")
 
+    # Accept a title for the bottom of the screen. This would normally be
+    # the game type, or a message.
     parser.add_argument('-t', '--title',
         default="Bingo Night",
         action="store",
@@ -231,11 +299,13 @@ if __name__ == '__main__':
         metavar='"bottom title or message"',
         help="Variable title displayed in the bottom of the screen. Can be changed via Edit button.")
 
+    # Accept a flag for automatic or manual game.
     parser.add_argument('-a', '--automatic',
         action="store_true",
         dest="automatic",
         help="Controls manual or automatic game.")
 
+    # Display the program version and exit.
     parser.add_argument('-v', '--version',
         action="version", version="%(prog)s " + BingoBoard_version)
 
@@ -245,8 +315,10 @@ if __name__ == '__main__':
     screen_title_text = args.screen_title_text
     game_title_text = args.game_title_text
 
+    # Create a logfile name based on the date.
     logfile_name = str(datetime.date.today()) + ".bingo.logfile"
 
+    # Create the command loop, create the display, and start the app.
     app = QApplication([])
 
     window = BingoWindow(automatic)
