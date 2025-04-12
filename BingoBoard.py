@@ -20,7 +20,9 @@ import argparse
 
 import bingogame # local to project
 
-BingoBoard_version = "4.0"
+from pallettes import pallettes # local to project
+
+BingoBoard_version = "5.0"
 
 class BingoWindow (QMainWindow):
     '''
@@ -34,19 +36,12 @@ class BingoWindow (QMainWindow):
     a timer to control the time between calls.
     It can be paused and restarted.
     '''
-    current_call_style =  " ; ".join(("color: black" ,
-        "background-color: silver",
-        "border-color: black",
-        "border-radius: 8",
-        "border: 8px ridge", ))
-    called_number_style = " ; ".join(("color: black",
-        "background: white",
-        "border: 2px solid"))
-    uncalled_number_style = "border: 2px solid"
-
-    def __init__(self, automatic=False):
+    def __init__(self, pallette_name="default", automatic=False):
         '''
         This method creates the layout of the main window.
+
+        If pallette_name is given, it will be used to initialize
+        the window colors to be used.
 
         If called with automatic=True, the window will
         include controls for automatic calling of numbers,
@@ -54,15 +49,22 @@ class BingoWindow (QMainWindow):
         calls, and a button to start and stop the automatic
         calling.
         '''
+        super().__init__()
+
+        pallette = pallettes[pallette_name]
+        self.board_style = pallette["board_style"]
+        self.current_call_style = pallette["current_call_style"]
+        self.called_number_style = pallette["called_number_style"]
+        self.uncalled_number_style = pallette["uncalled_number_style"]
+        self.button_style = pallette["button_style"]
+        self.slider_style = pallette["slider_style"]
+
         self.value_labels = [None,]
         self.current_game = bingogame.BingoGame()
 
-        super().__init__()
-
-        print(f"automatic = {automatic}")
-
         self.setWindowTitle("Bingo")
         self.resize(self.screen().size())
+        self.setStyleSheet(self.board_style)
 
         lay_rows = QVBoxLayout()
         center = QWidget()
@@ -83,6 +85,7 @@ class BingoWindow (QMainWindow):
         self.current_call.setFont(QFont('Times New Roman',
             128))
         self.current_call.setAlignment(Qt.AlignCenter)
+        # [LINK] current_call_style
         self.current_call.setStyleSheet(self.current_call_style)
         lay_row.addWidget(self.current_call)
         lay_rows.addLayout(lay_row)
@@ -91,6 +94,7 @@ class BingoWindow (QMainWindow):
             lay_row = QHBoxLayout()
             row_label = QLabel(row)
             row_label.setFont(QFont('Arial', 60))
+            # [LINK] uncalled_number_style
             row_label.setStyleSheet("border: 2px solid")
             row_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             lay_row.addWidget(row_label)
@@ -98,6 +102,7 @@ class BingoWindow (QMainWindow):
                 call = QPushButton(f"{i:02}")
                 call.setFixedSize(100,100)
                 call.setFont(QFont('Arial', 60))
+                # [LINK] uncalled_number_style
                 call.setStyleSheet("border: 2px solid")
                 call.clicked.connect(self.call_clicked)
                 #call.setAlignment(Qt.AlignVCenter)
@@ -116,6 +121,8 @@ class BingoWindow (QMainWindow):
         self.game_title.setFixedWidth(1000)
         lay_row.addWidget(self.game_title)
         self.change_title = QPushButton("Edit")
+        # [LINK] button_style
+        self.change_title.setStyleSheet(self.button_style)
         lay_row.addWidget(self.change_title)
         self.change_title.clicked.connect(self.new_title)
 
@@ -127,6 +134,8 @@ class BingoWindow (QMainWindow):
             self.slider.setMinimum(0)
             self.slider.setMaximum(60)
             self.slider.setSingleStep(5)
+            # [LINK] slider_style
+            self.slider.setStyleSheet(self.slider_style)
             layout.addWidget(self.slider)
             prompt = QLabel(" | 60 sec -> ")
             layout.addWidget(prompt)
@@ -134,12 +143,16 @@ class BingoWindow (QMainWindow):
             width = self.timing.sizeHint().width()
             self.timing.setFixedWidth(width)
             self.timing.setAlignment(Qt.AlignHCenter)
+            # [LINK] button_style
+            self.timing.setStyleSheet(self.button_style)
             layout.addWidget(self.timing)
             self.call_time = 0
             lay_row.addLayout(layout)
 
             layout = QHBoxLayout()
             self.pause = QPushButton("Call")
+            # [LINK] button_style
+            self.pause.setStyleSheet(self.button_style)
             layout.addWidget(self.pause)
             self.paused = True
             lay_row.addLayout(layout)
@@ -152,9 +165,12 @@ class BingoWindow (QMainWindow):
             self.game_title.setFixedWidth(1500)
 
         self.clear = QPushButton("Clear")
+        # [LINK] button_style
+        self.clear.setStyleSheet(self.button_style)
         self.clear.clicked.connect(self.clear_board)
         lay_row.addWidget(self.clear)
         self.done = QPushButton("Exit")
+        self.done.setStyleSheet(self.button_style)
         self.done.clicked.connect(self.done_with_game)
         lay_row.addWidget(self.done)
         lay_row.setSpacing(30)
@@ -226,6 +242,7 @@ class BingoWindow (QMainWindow):
         the list of called numbers.
         '''
         call_value = next(self.current_game)
+        # [LINK] called_number_style
         window.value_labels[call_value].\
             setStyleSheet(self.called_number_style)
         window.current_call.setText(self.current_game.\
@@ -263,11 +280,13 @@ class BingoWindow (QMainWindow):
         called numbers.
         '''
         if call_value in self.current_game.called_list():
+            # [LINK] uncalled_number_style
             window.value_labels[call_value].setStyleSheet(
                 self.uncalled_number_style)
             window.current_call.setText("")
             self.current_game.called_numbers.remove(call_value)
         else:
+            # [LINK] called_number_style
             window.value_labels[call_value].setStyleSheet(
                 self.called_number_style)
             window.current_call.setText(self.current_game.
@@ -287,6 +306,7 @@ class BingoWindow (QMainWindow):
         self.current_game = bingogame.BingoGame()
         # reset the board
         for i in range(1, 76):
+            # [LINK] uncalled_number_style
             window.value_labels[int(i)].setStyleSheet(
                 self.uncalled_number_style)
             window.current_call.setText("")
@@ -316,6 +336,14 @@ if __name__ == '__main__':
         For manual games, called numbers are chosen by clicking on the number
         on the screen.""",
         epilog="To run, type ./BingoBoard.py")
+
+    # accept the name of a color pallette to use. Defaults to "default"
+    parser.add_argument('-p', '--pallette',
+        default="default",
+        action="store",
+        dest="pallette_name",
+        metavar='"color pallette to use"',
+        help=f"Choose a pre-defined color pallette to use on the display. Remains constant during program run. Choices are {pallettes.keys()}")
 
     # Accept a title for the top of the screen. This would normally be the
     # organization name, or event name.
@@ -357,6 +385,6 @@ if __name__ == '__main__':
     # Create the command loop, create the display, and start the app.
     app = QApplication([])
 
-    window = BingoWindow(automatic)
+    window = BingoWindow(args.pallette_name, automatic)
 
     exit(app.exec_())
