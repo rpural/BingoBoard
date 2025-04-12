@@ -227,7 +227,7 @@ class BingoWindow (QMainWindow):
         '''
         call_value = next(self.current_game)
         window.value_labels[call_value].\
-            setStyleSheet(called_number_style)
+            setStyleSheet(self.called_number_style)
         window.current_call.setText(self.current_game.\
             ball_name(call_value))
 
