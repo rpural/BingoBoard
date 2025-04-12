@@ -20,6 +20,11 @@ program. Options are implemented to change the page header title and message.
 Version 4.0 consolidates the controls on to the main window. Using an app called "AirParrot", the screen can be mirrored
 to several televisions. Display of the currently called number is displayed more prominently at the top of the screen.
 
+Version 5.0 introduces color pallettes to allow different display colors on the board. It adds a --pallette switch to
+select which pallette to use, and defaults to "default". The individual pallettes are defined in pallettes.py, which
+associates a set of CSS attributes with each type of display element. New pallettes can be defined in pallettes.py
+by following the pattern used in the three examples given there.
+
 There are controls for clearing the board, and exiting the program. When calling
 numbers automatically, the time between calls can be changed, and the calls can be paused (like when checking a
 winning card). In addition, for manual calling, the numbers in the main window are clickable.
