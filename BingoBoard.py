@@ -94,8 +94,8 @@ class BingoWindow (QMainWindow):
             lay_row = QHBoxLayout()
             row_label = QLabel(row)
             row_label.setFont(QFont('Arial', 60))
+            row_label.setStyleSheet(self.uncalled_number_style)
             # [LINK] uncalled_number_style
-            row_label.setStyleSheet("border: 2px solid")
             row_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             lay_row.addWidget(row_label)
             for i in range(base*15+1, base*15+16):
@@ -103,7 +103,7 @@ class BingoWindow (QMainWindow):
                 call.setFixedSize(100,100)
                 call.setFont(QFont('Arial', 60))
                 # [LINK] uncalled_number_style
-                call.setStyleSheet("border: 2px solid")
+                call.setStyleSheet(self.uncalled_number_style)
                 call.clicked.connect(self.call_clicked)
                 #call.setAlignment(Qt.AlignVCenter)
                 lay_row.addWidget(call)
