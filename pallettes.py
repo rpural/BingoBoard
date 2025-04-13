@@ -97,6 +97,21 @@ pallettes = \
             "border: 2px solid")),
          "button_style": "background-color: #dcb48b",
          "slider_style": ";", },
+     "flag":
+        {"board_style": "; ".join(("color: #ffffff",
+            "background-color: #0a3161",
+            "margin: 10")),
+         "current_call_style": " ; ".join(("color: #b31942" ,
+            "background-color: #ffffff",
+            "border-color: black",
+            "border-radius: 15",
+            "border: 8px ridge", )),
+         "uncalled_number_style": "border: 2px solid",
+         "called_number_style": " ; ".join(("color: #b31942",
+            "background: #ffffff",
+            "border: 2px solid")),
+         "button_style": "background-color: #B31942",
+         "slider_style": ";", },
     }
 
 if __name__ == "__main__":

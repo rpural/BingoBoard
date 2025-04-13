@@ -343,7 +343,7 @@ if __name__ == '__main__':
         action="store",
         dest="pallette_name",
         metavar='"color pallette to use"',
-        help=f"Choose a pre-defined color pallette to use on the display. Remains constant during program run. Choices are {pallettes.keys()}")
+        help=f"Choose a pre-defined color pallette to use on the display. Remains constant during program run. Choices are {list(pallettes.keys())}")
 
     # Accept a title for the top of the screen. This would normally be the
     # organization name, or event name.
