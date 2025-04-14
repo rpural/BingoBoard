@@ -85,7 +85,6 @@ class BingoWindow (QMainWindow):
         self.current_call.setFont(QFont('Times New Roman',
             128))
         self.current_call.setAlignment(Qt.AlignCenter)
-        # [LINK] current_call_style
         self.current_call.setStyleSheet(self.current_call_style)
         lay_row.addWidget(self.current_call)
         lay_rows.addLayout(lay_row)
@@ -95,14 +94,12 @@ class BingoWindow (QMainWindow):
             row_label = QLabel(row)
             row_label.setFont(QFont('Arial', 60))
             row_label.setStyleSheet(self.uncalled_number_style)
-            # [LINK] uncalled_number_style
             row_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             lay_row.addWidget(row_label)
             for i in range(base*15+1, base*15+16):
                 call = QPushButton(f"{i:02}")
                 call.setFixedSize(100,100)
                 call.setFont(QFont('Arial', 60))
-                # [LINK] uncalled_number_style
                 call.setStyleSheet(self.uncalled_number_style)
                 call.clicked.connect(self.call_clicked)
                 #call.setAlignment(Qt.AlignVCenter)
@@ -121,7 +118,6 @@ class BingoWindow (QMainWindow):
         self.game_title.setFixedWidth(1000)
         lay_row.addWidget(self.game_title)
         self.change_title = QPushButton("Edit")
-        # [LINK] button_style
         self.change_title.setStyleSheet(self.button_style)
         lay_row.addWidget(self.change_title)
         self.change_title.clicked.connect(self.new_title)
@@ -134,7 +130,6 @@ class BingoWindow (QMainWindow):
             self.slider.setMinimum(0)
             self.slider.setMaximum(60)
             self.slider.setSingleStep(5)
-            # [LINK] slider_style
             self.slider.setStyleSheet(self.slider_style)
             layout.addWidget(self.slider)
             prompt = QLabel(" | 60 sec -> ")
@@ -143,7 +138,6 @@ class BingoWindow (QMainWindow):
             width = self.timing.sizeHint().width()
             self.timing.setFixedWidth(width)
             self.timing.setAlignment(Qt.AlignHCenter)
-            # [LINK] button_style
             self.timing.setStyleSheet(self.button_style)
             layout.addWidget(self.timing)
             self.call_time = 0
@@ -151,7 +145,6 @@ class BingoWindow (QMainWindow):
 
             layout = QHBoxLayout()
             self.pause = QPushButton("Call")
-            # [LINK] button_style
             self.pause.setStyleSheet(self.button_style)
             layout.addWidget(self.pause)
             self.paused = True
@@ -165,7 +158,6 @@ class BingoWindow (QMainWindow):
             self.game_title.setFixedWidth(1500)
 
         self.clear = QPushButton("Clear")
-        # [LINK] button_style
         self.clear.setStyleSheet(self.button_style)
         self.clear.clicked.connect(self.clear_board)
         lay_row.addWidget(self.clear)
@@ -242,7 +234,6 @@ class BingoWindow (QMainWindow):
         the list of called numbers.
         '''
         call_value = next(self.current_game)
-        # [LINK] called_number_style
         window.value_labels[call_value].\
             setStyleSheet(self.called_number_style)
         window.current_call.setText(self.current_game.\
@@ -280,13 +271,11 @@ class BingoWindow (QMainWindow):
         called numbers.
         '''
         if call_value in self.current_game.called_list():
-            # [LINK] uncalled_number_style
             window.value_labels[call_value].setStyleSheet(
                 self.uncalled_number_style)
             window.current_call.setText("")
             self.current_game.called_numbers.remove(call_value)
         else:
-            # [LINK] called_number_style
             window.value_labels[call_value].setStyleSheet(
                 self.called_number_style)
             window.current_call.setText(self.current_game.
@@ -306,7 +295,6 @@ class BingoWindow (QMainWindow):
         self.current_game = bingogame.BingoGame()
         # reset the board
         for i in range(1, 76):
-            # [LINK] uncalled_number_style
             window.value_labels[int(i)].setStyleSheet(
                 self.uncalled_number_style)
             window.current_call.setText("")
