@@ -15,6 +15,9 @@
     will be displayed.
 '''
 
+from re import A
+
+
 pallettes = \
     {"default":
         {"board": "; ".join(("color: black",
@@ -108,6 +111,36 @@ pallettes = \
             "background: #ffffff",
             "border: 2px solid")),
          "button": "background-color: #B31942",
+         "slider": ";", },
+     "nature":
+        {"board": "; ".join(("color: black",
+            "background-color: #A4B465",
+            "margin: 10")),
+         "current": " ; ".join(("color: #626F47" ,
+            "background-color: #FEFAE0",
+            "border-color: black",
+            "border-radius: 35",
+            "border: 8px ridge", )),
+         "uncalled": "border: 2px solid",
+         "called": " ; ".join(("color: black",
+            "background: #FFCF50",
+            "border: 2px solid")),
+         "button": "background-color: #626F47 ; color: white",
+         "slider": ";", },
+     "xmas":
+        {"board": "; ".join(("color: #5CB338",
+            "background-color: #FFC145",
+            "margin: 10")),
+         "current": " ; ".join(("color: #FB4141" ,
+            "background-color: #ECE852",
+            "border-color: black",
+            "border-radius: 35",
+            "border: 8px ridge", )),
+         "uncalled": "border: 2px solid",
+         "called": " ; ".join(("color: FB4141",
+            "background: #ECE852",
+            "border: 2px solid")),
+         "button": "background-color: #5CB338 ; color: white",
          "slider": ";", },
     }
 
