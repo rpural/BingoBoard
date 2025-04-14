@@ -52,12 +52,12 @@ class BingoWindow (QMainWindow):
         super().__init__()
 
         pallette = pallettes[pallette_name]
-        self.board_style = pallette["board_style"]
-        self.current_call_style = pallette["current_call_style"]
-        self.called_number_style = pallette["called_number_style"]
-        self.uncalled_number_style = pallette["uncalled_number_style"]
-        self.button_style = pallette["button_style"]
-        self.slider_style = pallette["slider_style"]
+        self.board_style = pallette["board"]
+        self.current_call_style = pallette["current"]
+        self.called_number_style = pallette["called"]
+        self.uncalled_number_style = pallette["uncalled"]
+        self.button_style = pallette["button"]
+        self.slider_style = pallette["slider"]
 
         self.value_labels = [None,]
         self.current_game = bingogame.BingoGame()
