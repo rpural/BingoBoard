@@ -5,7 +5,7 @@ import sys
 
 import cv2
 import imutils
-from PyQt5.QtCore import Qt, QThread, QTimer
+from PyQt5.QtCore import QSize, Qt, QThread, QTimer
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.QtGui import QFont, QImage, QPixmap
@@ -27,12 +27,32 @@ import bingogame  # local to project
 class CameraThread(QThread):
     frame_signal = Signal(QImage)
 
+    def __init__(self):
+        super().__init__()
+        self.camera_index = 0
+
     def run(self):
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(self.camera_index)
         while self.cap.isOpened():
             _, frame = self.cap.read()
             frame = self.cvimage_to_label(frame)
             self.frame_signal.emit(frame)
+
+    def switch_camera(self):
+        """[TODO]:
+        Next three lines limits camera index to 0 or 1, as the isOpened()
+        function fails to work on a non-existant camera, but VideoCapture()
+        doesn't appear to return anything useful in that situation.
+        """
+        self.camera_index += 1
+        if self.camera_index == 2:
+            self.camera_index = 0
+        self.cap = cv2.VideoCapture(self.camera_index)
+        if not self.cap or not self.cap.isOpened():
+            self.camera_index = 0
+            self.cap = cv2.VideoCapture(self.camera_index)
+            if not self.cap or not self.cap.isOpened():
+                return False
 
     def cvimage_to_label(self, image):
         image = imutils.resize(image, width=280)
@@ -42,6 +62,11 @@ class CameraThread(QThread):
 
 
 class BingoBoard(QMainWindow):
+    """
+    BingoBoard defines the main display window, containing the number grid, currently called number, title,
+    subtitle, and optionally the video display of the current ball
+    """
+
     def __init__(self):
         self.value_labels = [
             None,
@@ -51,6 +76,8 @@ class BingoBoard(QMainWindow):
 
         self.setWindowTitle("Bingo")
         self.resize(self.screen().size())
+        self.camera_index = 0
+        self.camera_zoom = 0.0
 
         lay_rows = QVBoxLayout()
         center = QWidget()
@@ -78,6 +105,7 @@ class BingoBoard(QMainWindow):
             # Bingo ball camera
             self.camera_feed = QLabel("")
             self.camera_feed.setFixedWidth(280)
+            self.camera_feed.setFixedHeight(280)
             self.camera_feed.setFont(QFont("Times New Roman", 128))
             self.camera_feed.setAlignment(Qt.AlignCenter)
             self.camera_feed.setStyleSheet(
@@ -85,8 +113,19 @@ class BingoBoard(QMainWindow):
             )
             lay_row.addWidget(self.camera_feed)
 
+            camera_controls = QVBoxLayout()
+            self.camera_slider = QSlider(Qt.Vertical)
+            self.camera_slider.valueChanged[int].connect(self.changeCameraZoom)
+            camera_controls.addWidget(self.camera_slider)
+            self.switch_camera = QPushButton("cam")
+            self.switch_camera.setFixedWidth(30)
+            self.switch_camera.clicked.connect(self.changeCameraIndex)
+            camera_controls.addWidget(self.switch_camera)
+
             self.camera_thread = CameraThread()
             self.camera_thread.frame_signal.connect(self.setImage)
+
+            lay_row.addLayout(camera_controls)
 
         lay_rows.addLayout(lay_row)
 
@@ -103,7 +142,6 @@ class BingoBoard(QMainWindow):
                 call.setFont(QFont("Arial", 60))
                 call.setStyleSheet("border: 2px solid")
                 call.clicked.connect(self.call_clicked)
-                # call.setAlignment(Qt.AlignVCenter)
                 lay_row.addWidget(call)
                 self.value_labels.append(call)
             lay_row.setSpacing(10)
@@ -138,6 +176,12 @@ class BingoBoard(QMainWindow):
         if camera:
             self.camera_thread.start()
 
+    def changeCameraZoom(self, value):
+        self.camera_zoom = value
+
+    def changeCameraIndex(self):
+        self.camera_thread.switch_camera()
+
     def call_clicked(self):
         cell = self.sender()
         called_number = int(cell.text())
@@ -145,7 +189,15 @@ class BingoBoard(QMainWindow):
 
     @Slot(QImage)
     def setImage(self, image):
-        self.camera_feed.setPixmap(QPixmap.fromImage(image))
+        self.camera_feed.setPixmap(
+            QPixmap.fromImage(image).scaled(
+                QSize(
+                    int(280 * (1 + self.camera_zoom / 100)),
+                    int(280 * (1 + self.camera_zoom / 100)),
+                ),
+                aspectRatioMode=Qt.KeepAspectRatioByExpanding,
+            )
+        )
 
 
 class Automatic_Window(QMainWindow):
