@@ -1,0 +1,42 @@
+{
+  "default": {
+    "board_style": "color: black; background-color: dimgray; margin: 10",
+    "current_call_style": "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge",
+    "uncalled_number_style": "border: 2px solid",
+    "called_number_style": "color: black ; background: white ; border: 2px solid",
+    "button_style": ";",
+    "slider_style": ";"
+  },
+  "blue": {
+    "board_style": "color: darkblue; background-color: cornflowerblue; margin: 10",
+    "current_call_style": "color: blue ; background-color: deepskyblue ; border-color: black ; border-radius: 8 ; border: 8px ridge",
+    "uncalled_number_style": "border: 2px solid",
+    "called_number_style": "color: black ; background: lightblue ; border: 2px solid",
+    "button_style": "background-color: lightcyan",
+    "slider_style": "background-color: lightcyan"
+  },
+  "red": {
+    "board_style": "color: firebrick; background-color: lightcoral; margin: 10",
+    "current_call_style": "color: firebrick ; background-color: ghostwhite ; border-color: black ; border-radius: 15 ; border: 8px ridge",
+    "uncalled_number_style": "border: 2px solid",
+    "called_number_style": "color: black ; background: hotpink ; border: 2px solid",
+    "button_style": "color: white ; background-color: darkred",
+    "slider_style": "color: white ; background-color: darkred"
+  },
+  "green": {
+    "board_style": "color: lightgreen; background-color: lime; margin: 10",
+    "current_call_style": "color: lightgreen ; background-color: ghostwhite ; border-color: black ; border-radius: 15 ; border: 8px ridge",
+    "uncalled_number_style": "border: 2px solid",
+    "called_number_style": "color: black ; background: green ; border: 2px solid",
+    "button_style": "color: white ; background-color: darkgreen",
+    "slider_style": "color: white ; background-color: darkgreen"
+  },
+  "valentine": {
+    "board_style": "color: black; background-color: #FFCCE6; margin: 10",
+    "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 15 ; border: 8px ridge",
+    "uncalled_number_style": "color: black ; border: 2px solid",
+    "called_number_style": "color: white ; background: #D90000 ; border: 2px solid",
+    "button_style": "color: white ; background-color: #D90000",
+    "slider_style": "color: white ; background-color: #D90000"
+  }
+}
