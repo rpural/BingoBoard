@@ -3,6 +3,9 @@
 # [LINK] button_style
 # [LINK] slider_style
 # [LINK] called_number_style
+
+import json
+
 pallettes = \
     {"default":
         {"board_style": "; ".join(("color: black",
@@ -51,6 +54,17 @@ pallettes = \
          "slider_style": "color: white ; background-color: darkred", },
     }
 
+def load_pallettes(filename):
+    with open(filename, "r") as pallette_source:
+        pallettes = json.load(pallette_source)
+        return pallettes
+
 if __name__ == "__main__":
     import json
+    print(json.dumps(pallettes, indent=4))
+
+    load_pallettes("pallettes.json")
+    print("-----")
+    print(json.dumps(pallettes, indent=4))
+
     print(json.dumps(pallettes, indent=4))
