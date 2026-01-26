@@ -19,13 +19,17 @@ A more robust command line syntax is implemented, allowing for both displaying n
 (like with a traditional ball tumbler) or for running the game entirely generating random calls within the
 program. Options are implemented to change the page header title and message.
 
-Version 4.0 consolidates the controls on to the main window. Using an app called "AirParrot", the screen can be mirrored
-to several televisions. Display of the currently called number is displayed more prominently at the top of the screen.
+Version 4.0 consolidates the controls on to the main window. 
+Display of the currently called number is displayed more prominently at the top of the screen.
 
 Version 5.0 introduces color pallettes to allow different display colors on the board. It adds a --pallette switch to
 select which pallette to use, and defaults to "default". The individual pallettes are defined in pallettes.py, which
 associates a set of CSS attributes with each type of display element. New pallettes can be defined in pallettes.py
 by following the pattern used in the examples given there.
+
+Version 6.0 introduces a live feed camera option to be used to show the bingo balls on the physical machine as they
+are called. Also, the pallette definitions are loaded from a pallettes.json file, to separate the screen customation
+from the program code
 
 ----
 
@@ -35,6 +39,17 @@ winning card). In addition, for manual calling, the numbers in the main window a
 
 Logs are produced containing the date and time of each game, and the numbers called during the game.
 
+----
+
+The original intention of the program was to mirror the window to a larger television. In order to mirror to
+multiple TVs at the same time, Two methods are available. Using an app called "AirParrot", the screen can be mirrored
+to several televisions on the same network, entirely via software. Initially, this method worked well for me on my MacBook
+Pro, but I was unable to duplicate my initial success. Your mileage may vary.
+
+Where the above method will not work, a hardware
+solution can be implemented via WELUSOPU wireless HDMI sets of a transmitter and two to four receivers, sold in sets
+on Amazon. These are plug-and-play wireless HDMI thransmitter and receiver sets, and work well.
+
 -----
 
-This program uses PyQt5 to format the displays. All code is Copyright Robert P. Nix, 2023 - 2025
+This program uses PyQt5 to format the displays. All code is Copyright Robert P. Nix, 2023 - 2026
