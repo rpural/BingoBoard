@@ -10,19 +10,62 @@ from PyQt5.QtWidgets import ( QApplication,
     QMainWindow,
     QInputDialog, )
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QSize, QTimer, QThread
+from PyQt5.QtCore import pyqtSignal as Signal
+from PyQt5.QtCore import pyqtSlot as Slot
 
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QImage, QPixmap
+
+import cv2
+import imutils
 
 import datetime
-
 import argparse
+import json
 
 import bingogame # local to project
 
-from pallettes import pallettes # local to project
+from pallettes import pallettes, load_pallettes # local to project
 
-BingoBoard_version = "5.0"
+BingoBoard_version = "6.0"
+
+
+class CameraThread(QThread):
+    frame_signal = Signal(QImage)
+
+    def __init__(self):
+        super().__init__()
+        self.camera_index = 0
+
+    def run(self):
+        self.cap = cv2.VideoCapture(self.camera_index)
+        while self.cap.isOpened():
+            _, frame = self.cap.read()
+            frame = self.cvimage_to_label(frame)
+            self.frame_signal.emit(frame)
+
+    def switch_camera(self):
+        """[TODO]:
+        Next three lines limits camera index to 0 or 1, as the isOpened()
+        function fails to work on a non-existant camera, but VideoCapture()
+        doesn't appear to return anything useful in that situation.
+        """
+        self.camera_index += 1
+        if self.camera_index == 2:
+            self.camera_index = 0
+        self.cap = cv2.VideoCapture(self.camera_index)
+        if not self.cap or not self.cap.isOpened():
+            self.camera_index = 0
+            self.cap = cv2.VideoCapture(self.camera_index)
+            if not self.cap or not self.cap.isOpened():
+                return False
+
+    def cvimage_to_label(self, image):
+        image = imutils.resize(image, width=280)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = QImage(image, image.shape[1], image.shape[0], QImage.Format_RGB888)
+        return image
+
 
 class BingoWindow (QMainWindow):
     '''
@@ -59,6 +102,9 @@ class BingoWindow (QMainWindow):
         self.button_style = pallette["button_style"]
         self.slider_style = pallette["slider_style"]
 
+        self.camera_index = 0
+        self.camera_zoom = 0.0
+
         self.value_labels = [None,]
         self.current_game = bingogame.BingoGame()
 
@@ -82,6 +128,7 @@ class BingoWindow (QMainWindow):
         # Currently called number at top of screen
         self.current_call = QLabel("")
         self.current_call.setFixedWidth(280)
+        self.current_call.setFixedHeight(280)
         self.current_call.setFont(QFont('Times New Roman',
             128))
         self.current_call.setAlignment(Qt.AlignCenter)
@@ -89,6 +136,32 @@ class BingoWindow (QMainWindow):
         self.current_call.setStyleSheet(self.current_call_style)
         lay_row.addWidget(self.current_call)
         lay_rows.addLayout(lay_row)
+
+        if camera:
+            # Bingo ball camera
+            self.camera_feed = QLabel("")
+            self.camera_feed.setFixedWidth(280)
+            self.camera_feed.setFixedHeight(280)
+            self.camera_feed.setFont(QFont("Times New Roman", 128))
+            self.camera_feed.setAlignment(Qt.AlignCenter)
+            self.camera_feed.setStyleSheet(
+                "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge"
+            )
+            lay_row.addWidget(self.camera_feed)
+
+            camera_controls = QVBoxLayout()
+            self.camera_slider = QSlider(Qt.Vertical)
+            self.camera_slider.valueChanged[int].connect(self.changeCameraZoom)
+            camera_controls.addWidget(self.camera_slider)
+            self.switch_camera = QPushButton("cam")
+            self.switch_camera.setFixedWidth(30)
+            self.switch_camera.clicked.connect(self.changeCameraIndex)
+            camera_controls.addWidget(self.switch_camera)
+
+            self.camera_thread = CameraThread()
+            self.camera_thread.frame_signal.connect(self.setImage)
+
+            lay_row.addLayout(camera_controls)
 
         for base, row in enumerate(("B","I","N","G","O")):
             lay_row = QHBoxLayout()
@@ -183,6 +256,15 @@ class BingoWindow (QMainWindow):
         self.call_time = 0
 
         self.show()
+
+        if camera:
+            self.camera_thread.start()
+
+    def changeCameraZoom(self, value):
+        self.camera_zoom = value
+
+    def changeCameraIndex(self):
+        self.camera_thread.switch_camera()
 
     def new_title(self):
         '''
@@ -322,12 +404,27 @@ class BingoWindow (QMainWindow):
             self.current_game.game_log(logfile_name)
         exit(0)
 
+    @Slot(QImage)
+    def setImage(self, image):
+        self.camera_feed.setPixmap(
+            QPixmap.fromImage(image).scaled(
+                QSize(
+                    int(280 * (1 + self.camera_zoom / 100)),
+                    int(280 * (1 + self.camera_zoom / 100)),
+                ),
+                aspectRatioMode=Qt.KeepAspectRatioByExpanding,
+            )
+        )
+
 
 if __name__ == '__main__':
     '''
     The main program. It parses the command line arguments,
     creates the BingoWindow, and starts the application.
     '''
+
+    pallettes = load_pallettes("pallettes.json")
+
     parser = argparse.ArgumentParser(prog="BingobBoard",
         description="""Fullscreen (TV) display of a Bingo call board, along
         with controls for either manually called games or games called
@@ -363,6 +460,14 @@ if __name__ == '__main__':
         metavar='"bottom title or message"',
         help="Variable title displayed in the bottom of the screen. Can be changed via Edit button.")
 
+    parser.add_argument(
+        "-c",
+        "--camera",
+        action="store_true",
+        dest="camera",
+        help="Include bingo ball camera instead of current number called.",
+    )
+
     # Accept a flag for automatic or manual game.
     parser.add_argument('-a', '--automatic',
         action="store_true",
@@ -376,6 +481,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     automatic = args.automatic
+    camera = args.camera
     screen_title_text = args.screen_title_text
     game_title_text = args.game_title_text
 
