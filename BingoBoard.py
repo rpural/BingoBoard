@@ -8,7 +8,8 @@ from PyQt5.QtWidgets import ( QApplication,
     QVBoxLayout,
     QHBoxLayout,
     QMainWindow,
-    QInputDialog, )
+    QInputDialog,
+    QSizePolicy, )
 
 from PyQt5.QtCore import Qt, QSize, QTimer, QThread
 from PyQt5.QtCore import pyqtSignal as Signal
@@ -27,7 +28,7 @@ import bingogame # local to project
 
 from pallettes import pallettes, load_pallettes # local to project
 
-BingoBoard_version = "6.0"
+BingoBoard_version = "7.0"
 
 
 class CameraThread(QThread):
@@ -94,6 +95,12 @@ class BingoWindow (QMainWindow):
         '''
         super().__init__()
 
+        # Get the initial window size
+        window_size = self.screen().size()
+        print(f"initial size - {window_size}")
+        self.window_width = window_size.width()
+        self.window_height = window_size.height()
+
         pallette = pallettes[pallette_name]
         self.board_style = pallette["board_style"]
         self.current_call_style = pallette["current_call_style"]
@@ -109,41 +116,54 @@ class BingoWindow (QMainWindow):
         self.current_game = bingogame.BingoGame()
 
         self.setWindowTitle("Bingo")
-        self.resize(self.screen().size())
+        print(f"first resize - {self.screen().size()}")
+        # self.resize(self.screen().size())
         self.setStyleSheet(self.board_style)
 
         lay_rows = QVBoxLayout()
         center = QWidget()
         center.setLayout(lay_rows)
         self.setCentralWidget(center)
+
         lay_row = QHBoxLayout()
 
-        # Event / organization title at top of screen
+        # Event / organization title and game message at top of screen
+        lay_col = QVBoxLayout()
+        # Organization title
         self.screen_title = QLabel(screen_title_text)
-        self.screen_title.setFont(QFont('Times New Roman',
-            60))
-        self.screen_title.setAlignment(Qt.AlignCenter)
-        lay_row.addWidget(self.screen_title)
+        self.screen_title.setFont(QFont('Times New Roman',25))
+        self.screen_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.screen_title.setAlignment(Qt.AlignLeft)
+        lay_col.addWidget(self.screen_title)
+
+        # Game title at top center of screen
+        self.game_title = QLabel(game_title_text)
+        self.game_title.setFont(QFont('Arial', 50))
+        self.game_title.setAlignment(Qt.AlignCenter)
+        self.game_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.game_title.setAlignment(Qt.AlignCenter)
+        self.game_title.setWordWrap(True)
+        # self.game_title.setFixedWidth(1000)
+        lay_col.addWidget(self.game_title)
+
+        lay_row.addLayout(lay_col)
+        # lay_row.addWidget(self.game_title)
 
         # Currently called number at top of screen
         self.current_call = QLabel("")
         self.current_call.setFixedWidth(280)
         self.current_call.setFixedHeight(280)
-        self.current_call.setFont(QFont('Times New Roman',
-            128))
+        self.current_call.setFont(QFont('Times New Roman', 128))
         self.current_call.setAlignment(Qt.AlignCenter)
         # [LINK] current_call_style
         self.current_call.setStyleSheet(self.current_call_style)
         lay_row.addWidget(self.current_call)
-        lay_rows.addLayout(lay_row)
 
         if camera:
             # Bingo ball camera
             self.camera_feed = QLabel("")
             self.camera_feed.setFixedWidth(280)
             self.camera_feed.setFixedHeight(280)
-            self.camera_feed.setFont(QFont("Times New Roman", 128))
-            self.camera_feed.setAlignment(Qt.AlignCenter)
             self.camera_feed.setStyleSheet(
                 "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge"
             )
@@ -153,8 +173,9 @@ class BingoWindow (QMainWindow):
             self.camera_slider = QSlider(Qt.Vertical)
             self.camera_slider.valueChanged[int].connect(self.changeCameraZoom)
             camera_controls.addWidget(self.camera_slider)
-            self.switch_camera = QPushButton("cam")
-            self.switch_camera.setFixedWidth(30)
+            self.switch_camera = QPushButton("📹")
+            self.switch_camera.setStyleSheet("padding: 5px ; " + self.button_style)
+            # self.switch_camera.setFixedWidth(30)
             self.switch_camera.clicked.connect(self.changeCameraIndex)
             camera_controls.addWidget(self.switch_camera)
 
@@ -162,13 +183,17 @@ class BingoWindow (QMainWindow):
             self.camera_thread.frame_signal.connect(self.setImage)
 
             lay_row.addLayout(camera_controls)
+        lay_rows.addLayout(lay_row)
+
 
         for base, row in enumerate(("B","I","N","G","O")):
             lay_row = QHBoxLayout()
             row_label = QLabel(row)
+            row_label.setFixedSize(100,100)
             row_label.setFont(QFont('Arial', 60))
+            row_label.setStyleSheet(f"background-color: {('lightblue','red','white','lightgreen','lightyellow')[base]} ; border: 2px solid")
             # [LINK] uncalled_number_style
-            row_label.setStyleSheet("border: 2px solid")
+            # row_label.setStyleSheet("border: 2px solid")
             row_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             lay_row.addWidget(row_label)
             for i in range(base*15+1, base*15+16):
@@ -187,15 +212,14 @@ class BingoWindow (QMainWindow):
         lay_row = QHBoxLayout()
         lay_row.setSpacing(30)
 
-        # Game title at bottom of screen
-        self.game_title = QLabel(game_title_text)
-        self.game_title.setFont(QFont('Arial', 40))
-        self.game_title.setAlignment(Qt.AlignCenter)
-        self.game_title.setFixedWidth(1000)
-        lay_row.addWidget(self.game_title)
+        # self.screen_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # lay_row.addWidget(self.screen_title)
+        spacing = QLabel(" ")
+        spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        lay_row.addWidget(spacing)
         self.change_title = QPushButton("Edit")
         # [LINK] button_style
-        self.change_title.setStyleSheet(self.button_style)
+        self.change_title.setStyleSheet("width: 50px ; " + self.button_style)
         lay_row.addWidget(self.change_title)
         self.change_title.clicked.connect(self.new_title)
 
@@ -217,7 +241,7 @@ class BingoWindow (QMainWindow):
             self.timing.setFixedWidth(width)
             self.timing.setAlignment(Qt.AlignHCenter)
             # [LINK] button_style
-            self.timing.setStyleSheet(self.button_style)
+            self.timing.setStyleSheet("width: 50px ; " + self.button_style)
             layout.addWidget(self.timing)
             self.call_time = 0
             lay_row.addLayout(layout)
@@ -225,7 +249,7 @@ class BingoWindow (QMainWindow):
             layout = QHBoxLayout()
             self.pause = QPushButton("Call")
             # [LINK] button_style
-            self.pause.setStyleSheet(self.button_style)
+            self.pause.setStyleSheet("width: 50px ; " + self.button_style)
             layout.addWidget(self.pause)
             self.paused = True
             lay_row.addLayout(layout)
@@ -234,31 +258,34 @@ class BingoWindow (QMainWindow):
             self.slider.valueChanged.connect(self.slider_position)
             self.pause.clicked.connect(self.pause_toggle)
 
-        else:
-            self.game_title.setFixedWidth(1500)
-
         self.clear = QPushButton("Clear")
         # [LINK] button_style
-        self.clear.setStyleSheet(self.button_style)
+        self.clear.setStyleSheet("width: 50px ; " + self.button_style)
         self.clear.clicked.connect(self.clear_board)
         lay_row.addWidget(self.clear)
         self.done = QPushButton("Exit")
-        self.done.setStyleSheet(self.button_style)
+        self.done.setStyleSheet("width: 50px ; " + self.button_style)
         self.done.clicked.connect(self.done_with_game)
         lay_row.addWidget(self.done)
         lay_row.setSpacing(30)
         lay_rows.addLayout(lay_row)
-        lay_rows.setSpacing(30)
+        lay_rows.setSpacing(10)
 
         self.call_timer = QTimer()
-        self.call_timer.timeout.\
-            connect(self.call_timer_pop)
+        self.call_timer.timeout.connect(self.call_timer_pop)
         self.call_time = 0
 
-        self.show()
+        # self.show()
 
         if camera:
             self.camera_thread.start()
+
+    def resizeEvent(self, event):
+        self.window_width = event.size().width()
+        self.window_height = event.size().height()
+        # self.resize(self.window_width, self.window_height)
+        print(f"Resized to: {self.window_width}x{self.window_height}")
+        super().resizeEvent(event)
 
     def changeCameraZoom(self, value):
         self.camera_zoom = value
@@ -273,8 +300,8 @@ class BingoWindow (QMainWindow):
         the screen. This can be used for a greeting, or to
         announce a type of game (Four Corners, Blackout, etc.)
         '''
-        text, ok = QInputDialog.getText(self, 'Game Title',
-            'Enter new game title:')
+        text, ok = QInputDialog.getText(self, 'Game',
+            'Enter new game description:')
         if ok:
             self.game_title.setText(text)
 
@@ -384,7 +411,7 @@ class BingoWindow (QMainWindow):
         '''
         self.call_timer.stop()  # end current game
         if len(self.current_game):
-            self.current_game.game_log(logfile_name)
+            self.current_game.game_log(logfile_name, game=self.game_title.text())
         self.current_game = bingogame.BingoGame()
         # reset the board
         for i in range(1, 76):
@@ -400,8 +427,7 @@ class BingoWindow (QMainWindow):
         game if there are called numbers, and exit the
         program.
         '''
-        if len(self.current_game):
-            self.current_game.game_log(logfile_name)
+        self.clear_board()
         exit(0)
 
     @Slot(QImage)
@@ -492,5 +518,9 @@ if __name__ == '__main__':
     app = QApplication([])
 
     window = BingoWindow(args.pallette_name, automatic)
+    # window.showFullScreen()
+    # window.showMaximized()
+    window.show()
+
 
     exit(app.exec_())
