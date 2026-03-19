@@ -15,9 +15,10 @@ from PyQt5.QtCore import Qt, QSize, QTimer, QThread
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
 
-from PyQt5.QtGui import QFont, QImage, QPixmap
+from PyQt5.QtGui import QFont, QFontMetrics, QImage, QPixmap
 
 import cv2
+from cv2_enumerate_cameras import enumerate_cameras
 import imutils
 
 import datetime
@@ -26,7 +27,7 @@ import json
 
 import bingogame # local to project
 
-from pallettes import pallettes, load_pallettes # local to project
+from palettes import palettes, load_palettes # local to project
 
 BingoBoard_version = "7.0"
 
@@ -34,16 +35,28 @@ BingoBoard_version = "7.0"
 class CameraThread(QThread):
     frame_signal = Signal(QImage)
 
+    def list_cameras(self):
+        cameras = enumerate_cameras()
+        result = [cam.index for cam in cameras]
+        return result
+
+
     def __init__(self):
         super().__init__()
+        self.cameras = self.list_cameras()
+        self.old_camera = -1
         self.camera_index = 0
+        self.cap = None
 
     def run(self):
-        self.cap = cv2.VideoCapture(self.camera_index)
-        while self.cap.isOpened():
+        self.cap = cv2.VideoCapture(self.cameras[self.camera_index])
+        self.old_camera = self.camera_index
+        while True:
+            self.cap = cv2.VideoCapture(self.cameras[self.camera_index])
             _, frame = self.cap.read()
             frame = self.cvimage_to_label(frame)
             self.frame_signal.emit(frame)
+            self.cap.release()
 
     def switch_camera(self):
         """[TODO]:
@@ -51,15 +64,19 @@ class CameraThread(QThread):
         function fails to work on a non-existant camera, but VideoCapture()
         doesn't appear to return anything useful in that situation.
         """
-        self.camera_index += 1
-        if self.camera_index == 2:
-            self.camera_index = 0
-        self.cap = cv2.VideoCapture(self.camera_index)
-        if not self.cap or not self.cap.isOpened():
-            self.camera_index = 0
-            self.cap = cv2.VideoCapture(self.camera_index)
-            if not self.cap or not self.cap.isOpened():
-                return False
+        self.cap.release()
+        base_index = self.camera_index
+        while True:
+            self.camera_index += 1
+            if self.camera_index >= len(self.cameras):
+                self.camera_index = 0
+            self.cap = cv2.VideoCapture(self.cameras[self.camera_index])
+            if self.cap and self.cap.isOpened():
+                self.cap.release()
+                break
+            if self.camera_index == base_index:
+                return None
+        self.run()
 
     def cvimage_to_label(self, image):
         image = imutils.resize(image, width=280)
@@ -80,11 +97,34 @@ class BingoWindow (QMainWindow):
     a timer to control the time between calls.
     It can be paused and restarted.
     '''
-    def __init__(self, pallette_name="default", automatic=False):
+
+    def find_font_size(self, box_size, font_name, test_text, margin=30):
+        '''
+        Given a fixed size box or width and a specified font, find the
+        largest font that could be used to render a given text.
+
+        box_size: the width of the box in pixels
+        font_name: the font to be used for the text
+        test_text: the sample text to be fitted. Should represent the widest expected
+        margin: the amount of pixels to be subtracted from the box_size
+        '''
+        font_size = 12
+        font = QFont(font_name, font_size)
+        width = 0
+        while width < (box_size - margin):
+            font_size += 3
+            font = QFont(font_name, font_size)
+            metrics = QFontMetrics(font)
+            width = metrics.width(test_text)
+        font_size -= 3
+        print(f"font selected: ({font_name}, {font_size})")
+        return font_size
+
+    def __init__(self, palette_name="default", automatic=False):
         '''
         This method creates the layout of the main window.
 
-        If pallette_name is given, it will be used to initialize
+        If palette_name is given, it will be used to initialize
         the window colors to be used.
 
         If called with automatic=True, the window will
@@ -101,13 +141,21 @@ class BingoWindow (QMainWindow):
         self.window_width = window_size.width()
         self.window_height = window_size.height()
 
-        pallette = pallettes[pallette_name]
-        self.board_style = pallette["board_style"]
-        self.current_call_style = pallette["current_call_style"]
-        self.called_number_style = pallette["called_number_style"]
-        self.uncalled_number_style = pallette["uncalled_number_style"]
-        self.button_style = pallette["button_style"]
-        self.slider_style = pallette["slider_style"]
+        self.scale_large_box = int(0.15 * self.window_width)
+        self.scale_large_text = int(0.05 * self.window_width)
+        self.scale_small_box = int(0.054 * self.window_width)
+        self.scale_small_text = int(0.023 * self.window_width)
+        self.scale_large_text = self.find_font_size(self.scale_large_box, "Times New Roman", "G89")
+        self.scale_small_text = self.find_font_size(self.scale_small_box, "Helvetica", "89")
+        print(f"scales: ({self.scale_large_box}, {self.scale_large_text}), ({self.scale_small_box}, {self.scale_small_text})")
+
+        palette = palettes[palette_name]
+        self.board_style = palette["board_style"]
+        self.current_call_style = palette["current_call_style"]
+        self.called_number_style = palette["called_number_style"]
+        self.uncalled_number_style = palette["uncalled_number_style"]
+        self.button_style = palette["button_style"]
+        self.slider_style = palette["slider_style"]
 
         self.camera_index = 0
         self.camera_zoom = 0.0
@@ -115,7 +163,7 @@ class BingoWindow (QMainWindow):
         self.value_labels = [None,]
         self.current_game = bingogame.BingoGame()
 
-        self.setWindowTitle("Bingo")
+        self.setWindowTitle("Bingo Board")
         print(f"first resize - {self.screen().size()}")
         # self.resize(self.screen().size())
         self.setStyleSheet(self.board_style)
@@ -151,9 +199,9 @@ class BingoWindow (QMainWindow):
 
         # Currently called number at top of screen
         self.current_call = QLabel("")
-        self.current_call.setFixedWidth(280)
-        self.current_call.setFixedHeight(280)
-        self.current_call.setFont(QFont('Times New Roman', 128))
+        self.current_call.setFixedWidth(self.scale_large_box)
+        self.current_call.setFixedHeight(self.scale_large_box)
+        self.current_call.setFont(QFont('Times New Roman', self.scale_large_text))
         self.current_call.setAlignment(Qt.AlignCenter)
         # [LINK] current_call_style
         self.current_call.setStyleSheet(self.current_call_style)
@@ -162,8 +210,8 @@ class BingoWindow (QMainWindow):
         if camera:
             # Bingo ball camera
             self.camera_feed = QLabel("")
-            self.camera_feed.setFixedWidth(280)
-            self.camera_feed.setFixedHeight(280)
+            self.camera_feed.setFixedWidth(self.scale_large_box)
+            self.camera_feed.setFixedHeight(self.scale_large_box)
             self.camera_feed.setStyleSheet(
                 "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge"
             )
@@ -175,7 +223,6 @@ class BingoWindow (QMainWindow):
             camera_controls.addWidget(self.camera_slider)
             self.switch_camera = QPushButton("📹")
             self.switch_camera.setStyleSheet("padding: 5px ; " + self.button_style)
-            # self.switch_camera.setFixedWidth(30)
             self.switch_camera.clicked.connect(self.changeCameraIndex)
             camera_controls.addWidget(self.switch_camera)
 
@@ -189,21 +236,17 @@ class BingoWindow (QMainWindow):
         for base, row in enumerate(("B","I","N","G","O")):
             lay_row = QHBoxLayout()
             row_label = QLabel(row)
-            row_label.setFixedSize(100,100)
-            row_label.setFont(QFont('Arial', 60))
+            row_label.setFixedSize(self.scale_small_box, self.scale_small_box)
+            row_label.setFont(QFont('Arial', self.scale_small_text))
             row_label.setStyleSheet(f"background-color: {('lightblue','red','white','lightgreen','lightyellow')[base]} ; border: 2px solid")
-            # [LINK] uncalled_number_style
-            # row_label.setStyleSheet("border: 2px solid")
             row_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             lay_row.addWidget(row_label)
             for i in range(base*15+1, base*15+16):
                 call = QPushButton(f"{i:02}")
-                call.setFixedSize(100,100)
-                call.setFont(QFont('Arial', 60))
-                # [LINK] uncalled_number_style
+                call.setFixedSize(self.scale_small_box, self.scale_small_box)
+                call.setFont(QFont('Arial', self.scale_small_text))
                 call.setStyleSheet("border: 2px solid")
                 call.clicked.connect(self.call_clicked)
-                #call.setAlignment(Qt.AlignVCenter)
                 lay_row.addWidget(call)
                 self.value_labels.append(call)
             lay_row.setSpacing(10)
@@ -212,13 +255,10 @@ class BingoWindow (QMainWindow):
         lay_row = QHBoxLayout()
         lay_row.setSpacing(30)
 
-        # self.screen_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # lay_row.addWidget(self.screen_title)
         spacing = QLabel(" ")
         spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         lay_row.addWidget(spacing)
         self.change_title = QPushButton("Edit")
-        # [LINK] button_style
         self.change_title.setStyleSheet("width: 50px ; " + self.button_style)
         lay_row.addWidget(self.change_title)
         self.change_title.clicked.connect(self.new_title)
@@ -231,7 +271,6 @@ class BingoWindow (QMainWindow):
             self.slider.setMinimum(0)
             self.slider.setMaximum(60)
             self.slider.setSingleStep(5)
-            # [LINK] slider_style
             self.slider.setStyleSheet(self.slider_style)
             layout.addWidget(self.slider)
             prompt = QLabel(" | 60 sec -> ")
@@ -240,7 +279,6 @@ class BingoWindow (QMainWindow):
             width = self.timing.sizeHint().width()
             self.timing.setFixedWidth(width)
             self.timing.setAlignment(Qt.AlignHCenter)
-            # [LINK] button_style
             self.timing.setStyleSheet("width: 50px ; " + self.button_style)
             layout.addWidget(self.timing)
             self.call_time = 0
@@ -248,7 +286,6 @@ class BingoWindow (QMainWindow):
 
             layout = QHBoxLayout()
             self.pause = QPushButton("Call")
-            # [LINK] button_style
             self.pause.setStyleSheet("width: 50px ; " + self.button_style)
             layout.addWidget(self.pause)
             self.paused = True
@@ -259,7 +296,6 @@ class BingoWindow (QMainWindow):
             self.pause.clicked.connect(self.pause_toggle)
 
         self.clear = QPushButton("Clear")
-        # [LINK] button_style
         self.clear.setStyleSheet("width: 50px ; " + self.button_style)
         self.clear.clicked.connect(self.clear_board)
         lay_row.addWidget(self.clear)
@@ -274,8 +310,6 @@ class BingoWindow (QMainWindow):
         self.call_timer = QTimer()
         self.call_timer.timeout.connect(self.call_timer_pop)
         self.call_time = 0
-
-        # self.show()
 
         if camera:
             self.camera_thread.start()
@@ -389,13 +423,11 @@ class BingoWindow (QMainWindow):
         called numbers.
         '''
         if call_value in self.current_game.called_list():
-            # [LINK] uncalled_number_style
             window.value_labels[call_value].setStyleSheet(
                 self.uncalled_number_style)
             window.current_call.setText("")
             self.current_game.called_numbers.remove(call_value)
         else:
-            # [LINK] called_number_style
             window.value_labels[call_value].setStyleSheet(
                 self.called_number_style)
             window.current_call.setText(self.current_game.
@@ -415,7 +447,6 @@ class BingoWindow (QMainWindow):
         self.current_game = bingogame.BingoGame()
         # reset the board
         for i in range(1, 76):
-            # [LINK] uncalled_number_style
             window.value_labels[int(i)].setStyleSheet(
                 self.uncalled_number_style)
             window.current_call.setText("")
@@ -449,7 +480,7 @@ if __name__ == '__main__':
     creates the BingoWindow, and starts the application.
     '''
 
-    pallettes = load_pallettes("pallettes.json")
+    palettes = load_palettes("palettes.json")
 
     parser = argparse.ArgumentParser(prog="BingobBoard",
         description="""Fullscreen (TV) display of a Bingo call board, along
@@ -460,13 +491,13 @@ if __name__ == '__main__':
         on the screen.""",
         epilog="To run, type ./BingoBoard.py")
 
-    # accept the name of a color pallette to use. Defaults to "default"
-    parser.add_argument('-p', '--pallette',
+    # accept the name of a color palette to use. Defaults to "default"
+    parser.add_argument('-p', '--palette',
         default="default",
         action="store",
-        dest="pallette_name",
-        metavar='"color pallette to use"',
-        help=f"Choose a pre-defined color pallette to use on the display. Remains constant during program run. Choices are {pallettes.keys()}")
+        dest="palette_name",
+        metavar='"color palette to use"',
+        help=f"Choose a pre-defined color palette to use on the display. Remains constant during program run. Choices are {palettes.keys()}")
 
     # Accept a title for the top of the screen. This would normally be the
     # organization name, or event name.
@@ -517,7 +548,7 @@ if __name__ == '__main__':
     # Create the command loop, create the display, and start the app.
     app = QApplication([])
 
-    window = BingoWindow(args.pallette_name, automatic)
+    window = BingoWindow(args.palette_name, automatic)
     # window.showFullScreen()
     # window.showMaximized()
     window.show()
