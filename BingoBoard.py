@@ -31,6 +31,8 @@ from palettes import palettes, load_palettes # local to project
 
 BingoBoard_version = "7.0"
 
+large_box_dimention = 280 # default large box dimention
+
 
 class CameraThread(QThread):
     frame_signal = Signal(QImage)
@@ -43,20 +45,27 @@ class CameraThread(QThread):
 
     def __init__(self):
         super().__init__()
-        self.cameras = self.list_cameras()
+        # self.cameras = self.list_cameras()
+        self.cameras = enumerate_cameras()
+        for i, cam in enumerate(self.cameras):
+            if "Lenovo" in cam.name:
+                self.camera_index = i
+                break
+        else:
+            self.camera_index = 0
         self.old_camera = -1
-        self.camera_index = 0
         self.cap = None
 
     def run(self):
-        self.cap = cv2.VideoCapture(self.cameras[self.camera_index])
+        self.cap = cv2.VideoCapture(self.cameras[self.camera_index].index)
+        print(f"camera {self.camera_index} open")
         self.old_camera = self.camera_index
         while True:
-            self.cap = cv2.VideoCapture(self.cameras[self.camera_index])
+            #self.cap = cv2.VideoCapture(self.cameras[self.camera_index])
             _, frame = self.cap.read()
             frame = self.cvimage_to_label(frame)
             self.frame_signal.emit(frame)
-            self.cap.release()
+            # self.cap.release()
 
     def switch_camera(self):
         """[TODO]:
@@ -72,14 +81,13 @@ class CameraThread(QThread):
                 self.camera_index = 0
             self.cap = cv2.VideoCapture(self.cameras[self.camera_index])
             if self.cap and self.cap.isOpened():
-                self.cap.release()
                 break
             if self.camera_index == base_index:
                 return None
         self.run()
 
     def cvimage_to_label(self, image):
-        image = imutils.resize(image, width=280)
+        image = imutils.resize(image, width=large_box_dimention)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = QImage(image, image.shape[1], image.shape[0], QImage.Format_RGB888)
         return image
@@ -142,6 +150,8 @@ class BingoWindow (QMainWindow):
         self.window_height = window_size.height()
 
         self.scale_large_box = int(0.15 * self.window_width)
+        global large_box_dimention
+        large_box_dimention = self.scale_large_box
         self.scale_large_text = int(0.05 * self.window_width)
         self.scale_small_box = int(0.054 * self.window_width)
         self.scale_small_text = int(0.023 * self.window_width)
@@ -259,7 +269,7 @@ class BingoWindow (QMainWindow):
         spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         lay_row.addWidget(spacing)
         self.change_title = QPushButton("Edit")
-        self.change_title.setStyleSheet("width: 50px ; " + self.button_style)
+        self.change_title.setStyleSheet("width: 75px ; " + self.button_style)
         lay_row.addWidget(self.change_title)
         self.change_title.clicked.connect(self.new_title)
 
@@ -279,14 +289,14 @@ class BingoWindow (QMainWindow):
             width = self.timing.sizeHint().width()
             self.timing.setFixedWidth(width)
             self.timing.setAlignment(Qt.AlignHCenter)
-            self.timing.setStyleSheet("width: 50px ; " + self.button_style)
+            self.timing.setStyleSheet("width: 75px ; " + self.button_style)
             layout.addWidget(self.timing)
             self.call_time = 0
             lay_row.addLayout(layout)
 
             layout = QHBoxLayout()
             self.pause = QPushButton("Call")
-            self.pause.setStyleSheet("width: 50px ; " + self.button_style)
+            self.pause.setStyleSheet("width: 75px ; " + self.button_style)
             layout.addWidget(self.pause)
             self.paused = True
             lay_row.addLayout(layout)
@@ -295,12 +305,17 @@ class BingoWindow (QMainWindow):
             self.slider.valueChanged.connect(self.slider_position)
             self.pause.clicked.connect(self.pause_toggle)
 
+        self.record = QPushButton("Record")
+        self.record.setStyleSheet("width: 75px ; " + self.button_style)
+        self.record.clicked.connect(self.record_board)
+        lay_row.addWidget(self.record)
+
         self.clear = QPushButton("Clear")
-        self.clear.setStyleSheet("width: 50px ; " + self.button_style)
+        self.clear.setStyleSheet("width: 75px ; " + self.button_style)
         self.clear.clicked.connect(self.clear_board)
         lay_row.addWidget(self.clear)
         self.done = QPushButton("Exit")
-        self.done.setStyleSheet("width: 50px ; " + self.button_style)
+        self.done.setStyleSheet("width: 75px ; " + self.button_style)
         self.done.clicked.connect(self.done_with_game)
         lay_row.addWidget(self.done)
         lay_row.setSpacing(30)
@@ -434,6 +449,11 @@ class BingoWindow (QMainWindow):
                 ball_name(int(call_value)))
             self.current_game.called_numbers.append(call_value)
 
+    def record_board(self):
+        self.call_timer.stop()  # end current game
+        if len(self.current_game):
+            self.current_game.game_log(logfile_name, game=self.game_title.text())
+
     def clear_board(self):
         '''
         This method is called when the Clear button is
@@ -466,8 +486,8 @@ class BingoWindow (QMainWindow):
         self.camera_feed.setPixmap(
             QPixmap.fromImage(image).scaled(
                 QSize(
-                    int(280 * (1 + self.camera_zoom / 100)),
-                    int(280 * (1 + self.camera_zoom / 100)),
+                    int(large_box_dimention * (1 + self.camera_zoom / 100)),
+                    int(large_box_dimention * (1 + self.camera_zoom / 100)),
                 ),
                 aspectRatioMode=Qt.KeepAspectRatioByExpanding,
             )
