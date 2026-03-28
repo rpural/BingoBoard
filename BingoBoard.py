@@ -29,7 +29,7 @@ import bingogame # local to project
 
 from palettes import palettes, load_palettes # local to project
 
-BingoBoard_version = "7.0"
+BingoBoard_version = "8.0"
 
 large_box_dimention = 280 # default large box dimention
 
@@ -265,6 +265,11 @@ class BingoWindow (QMainWindow):
         lay_row = QHBoxLayout()
         lay_row.setSpacing(30)
 
+        self.ball_count = QLabel("[ 0 ]")
+        self.ball_count.setStyleSheet("width: 75px")
+        self.ball_count.setFont(QFont('Arial', self.scale_small_text - 10))
+        lay_row.addWidget(self.ball_count)
+
         spacing = QLabel(" ")
         spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         lay_row.addWidget(spacing)
@@ -366,6 +371,7 @@ class BingoWindow (QMainWindow):
         cell = self.sender()
         called_number = int(cell.text())
         self.record_call(called_number)
+        self.ball_count.setText("[ " + str(len(self.current_game)) + " ]")
 
     '''
     The following three methods are used to control the
@@ -470,6 +476,7 @@ class BingoWindow (QMainWindow):
             window.value_labels[int(i)].setStyleSheet(
                 self.uncalled_number_style)
             window.current_call.setText("")
+        window.ball_count.setText("[ 0 ]")
 
     def done_with_game(self):
         '''
