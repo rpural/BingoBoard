@@ -270,6 +270,17 @@ class BingoWindow (QMainWindow):
         self.ball_count.setFont(QFont('Arial', self.scale_small_text - 10))
         lay_row.addWidget(self.ball_count)
 
+
+        spacing = QLabel(" ")
+        spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        lay_row.addWidget(spacing)
+        label = QLabel("punch-out:")
+        label.setFont(QFont('Ariel', self.scale_small_text - 25))
+        lay_row.addWidget(label)
+        self.punchout = QLabel(" ")
+        self.punchout.setFont(QFont('Ariel', self.scale_small_text - 20))
+        lay_row.addWidget(self.punchout)
+
         spacing = QLabel(" ")
         spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         lay_row.addWidget(spacing)
@@ -309,6 +320,11 @@ class BingoWindow (QMainWindow):
             self.slider.sliderMoved.connect(self.slider_position)
             self.slider.valueChanged.connect(self.slider_position)
             self.pause.clicked.connect(self.pause_toggle)
+        else:
+            self.punchout_button = QPushButton("Punch-out")
+            self.punchout_button.setStyleSheet("width: 75px ; " + self.button_style)
+            self.punchout_button.clicked.connect(self.add_punchout)
+            lay_row.addWidget(self.punchout_button)
 
         self.record = QPushButton("Record")
         self.record.setStyleSheet("width: 75px ; " + self.button_style)
@@ -346,6 +362,11 @@ class BingoWindow (QMainWindow):
 
     def changeCameraIndex(self):
         self.camera_thread.switch_camera()
+
+    def add_punchout(self):
+        current = self.current_call.text()
+        if len(current) > 1:
+            self.punchout.setText(self.punchout.text() + " " + current)
 
     def new_title(self):
         '''
