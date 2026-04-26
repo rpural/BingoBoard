@@ -1,57 +1,82 @@
 {
   "default": {
-    "board_style": "color: black; background-color: dimgray; margin: 10",
+    "board_style": "color: black ; background-color: dimgray ; margin: 10",
     "current_call_style": "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge",
-    "uncalled_number_style": "border: 2px solid",
+    "uncalled_number_style": "color: black ; background-color: dimgray ;border: 2px solid",
     "called_number_style": "color: black ; background: white ; border: 2px solid",
+    "called_blink_style": "color: white ; background: black ; border: 2px solid",
     "button_style": ";",
     "slider_style": ";"
   },
   "welcome": {
     "board_style": "color: #734500; background-color: #FF9900; margin: 10",
     "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
-    "uncalled_number_style": "border: 2px solid",
+    "uncalled_number_style": "color: #734500; background-color: #FF9900; border: 2px solid",
     "called_number_style": "color: white ; background: #8C5400 ; border: 2px solid",
+    "called_blink_style": "color: black ; background: #8C5400 ; border: 2px solid",
     "button_style": "background-color: #D98200",
     "slider_style": "background-color: #D98200"
+  },
+  "summertime": {
+    "board_style": "color: #0ea7b5; background-color: #ffbe4f; margin: 10",
+    "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
+    "uncalled_number_style": "color: #0ea7b5; background-color: #ffbe4f; border: 2px solid",
+    "called_number_style": "color: white ; background: #0c457d ; border: 2px solid",
+    "called_blink_style": "color: black ; background: #8C5400 ; border: 2px solid",
+    "button_style": "color: #0ea7b5 ; background-color: #ffbe4f",
+    "slider_style": "background-color: #ffbe4f"
+  },
+  "summer": {
+    "board_style": "color: #0ea7b5; background-color: #faedca; margin: 10",
+    "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
+    "uncalled_number_style": "color: #c1dbb3; background-color: #faedca; border: 2px solid",
+    "called_number_style": "color: #e8683c ; background: #0c457d ; border: 2px solid",
+    "called_blink_style": "color: #89d8be ; background: #8C5400 ; border: 2px solid",
+    "button_style": "color: #c1dbb3 ; background-color: #faedca",
+    "slider_style": "background-color: #faedca"
   },
   "green": {
     "board_style": "color: black; background-color: #33FF40; margin: 10",
     "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
-    "uncalled_number_style": "border: 2px solid",
+    "uncalled_number_style": "color: black; background-color: #33FF40; border: 2px solid",
     "called_number_style": "color: white ; background: #008C0E ; border: 2px solid",
+    "called_blink_style": "color: black ; background: #008C0E ; border: 2px solid",
     "button_style": "background-color: #00D916",
     "slider_style": "background-color: #00D916"
   },
   "patrick": {
     "board_style": "color: black; background-color: #477040; margin: 10",
     "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
-    "uncalled_number_style": "border: 2px solid",
+    "uncalled_number_style": "color: black; background-color: #477040; border: 2px solid",
     "called_number_style": "color: white ; background: #1b5122 ; border: 2px solid",
+    "called_blink_style": "color: black ; background: #1b5122 ; border: 2px solid",
     "button_style": "background-color: #2d6718",
     "slider_style": "background-color: #2d6718"
   },
   "red": {
     "board_style": "color: firebrick; background-color: lightcoral; margin: 10",
     "current_call_style": "color: firebrick ; background-color: ghostwhite ; border-color: black ; border-radius: 15 ; border: 8px ridge",
-    "uncalled_number_style": "border: 2px solid",
+    "uncalled_number_style": "color: firebrick; background-color: lightcoral; border: 2px solid",
     "called_number_style": "color: black ; background: hotpink ; border: 2px solid",
+    "called_blink_style": "color: white ; background: hotpink ; border: 2px solid",
     "button_style": "color: white ; background-color: darkred",
     "slider_style": "color: white ; background-color: darkred"
   },
   "blue": {
     "board_style": "color: black; background-color: #00FF99; margin: 10",
     "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 15 ; border: 8px ridge",
-    "uncalled_number_style": "border: 2px solid",
+    "uncalled_number_style": "color: black; background-color: #00FF99; border: 2px solid",
     "called_number_style": "color: black ; background: #0066FF ; border: 2px solid",
+    "called_blink_style": "color: white ; background: #0066FF ; border: 2px solid",
     "button_style": "color: black ; background-color: #00E673",
     "slider_style": "color: black ; background-color: #00E673"
   },
   "valentine": {
     "board_style": "color: black; background-color: #FFCCE6; margin: 10",
     "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 15 ; border: 8px ridge",
-    "uncalled_number_style": "color: black ; border: 2px solid",
+    "uncalled_number_style": "ccolor: black; background-color: #FFCCE6; border: 2px solid",
     "called_number_style": "color: white ; background: #D90000 ; border: 2px solid",
+    "called_blink_style": "color: black ; background: #D90000 ; border: 2px solid",
     "button_style": "color: white ; background-color: #D90000",
     "slider_style": "color: white ; background-color: #D90000"
   }
