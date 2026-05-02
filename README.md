@@ -28,12 +28,22 @@ associates a set of CSS attributes with each type of display element. New pallet
 by following the pattern used in the examples given there.
 
 Version 6.0 introduces a live feed camera option to be used to show the bingo balls on the physical machine as they
-are called. Also, the pallette definitions are loaded from a pallettes.json file, to separate the screen customation
-from the program code
+are called. Also, the pallette definitions are loaded from a pallettes.json file, to separate the screen customization
+from the program code.
+
+Versions 7 and 8 clean up the code, and were attempts to identify the proper camera at runtime without manually specifying it.
+
+Version 9.0 implements a manual camera selection, which gives the camera index that the expected camera should appear as.
+This version also implements the feature of flashing the currently called number in the grid of numbers. This was requested
+because of the functioning of the physical display boards available, in spite of the fact that the currently called
+number was being displayed in huge letters at the top of the screen. Go figure. Also in this version is the ability
+to display "Punch-Out" numbers across the bottom of the screen. Added buttons at the bottom of the screen for Punch-Out
+and Record. Record logs the current game to the log file without clearing the numbers from the screen.
 
 ----
 
-There are controls for clearing the board, and exiting the program. When calling
+There are controls for editing the message at the top of the screen, saving a punch-out number, recording the game
+without clearing the board, clearing the board, and exiting the program. When calling
 numbers automatically, the time between calls can be changed, and the calls can be paused (like when checking a
 winning card). In addition, for manual calling, the numbers in the main window are clickable.
 
