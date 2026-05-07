@@ -1,22 +1,27 @@
 #! /usr/bin/env python3
 
+#! /usr/bin/env python3
+
 import argparse
 import datetime
 import json
 
 import cv2
 import imutils
-
-# from cv2_enumerate_cameras import enumerate_cameras
 from PyQt5.QtCore import QSize, Qt, QThread, QTimer
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.QtGui import QFont, QFontMetrics, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
     QHBoxLayout,
     QInputDialog,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QPushButton,
     QSizePolicy,
@@ -28,7 +33,7 @@ from PyQt5.QtWidgets import (
 import bingogame  # local to project
 from palettes import load_palettes, palettes  # local to project
 
-BingoBoard_version = "9.0"  # the John Hasty version
+BingoBoard_version = "10.0"  # the John Hasty version
 
 large_box_dimention = 280  # default large box dimention
 
@@ -76,7 +81,6 @@ class CameraThread(QThread):
 
     def run(self):
         self.cap = cv2.VideoCapture(camera_index)
-        print(f"camera {camera_index} open")
         # self.old_camera = self.camera_index
         while True:
             _, frame = self.cap.read()
@@ -109,6 +113,55 @@ class CameraThread(QThread):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = QImage(image, image.shape[1], image.shape[0], QImage.Format_RGB888)
         return image
+
+
+class Game_dialog(QDialog):
+    """
+    This class implements a dialog box for entering the pot amount and
+    game name for the current game. It returns three values:
+        success - a boolean indicating if OK or Cancel was pressed
+        pot     - The dollar amount of the pot
+        game    - the name of the game being played
+
+    If game is not found in the schedule, then it is a custom
+    message to be displayed without a pot or description added
+    """
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        game_font = parent.font()
+        game_font.setPointSize(game_font.pointSize() + 10)
+        self.setWindowTitle("Game Description")
+        lay_rows = QVBoxLayout()
+        self.setLayout(lay_rows)
+        self.form = QFormLayout()
+        self.pot = QLineEdit()
+        self.pot.setFont(game_font)
+        self.form.addRow("Pot Amount: $", self.pot)
+        self.game = QComboBox()
+        self.game.setFont(game_font)
+        self.game.addItems(palettes["schedule"].keys())
+        self.game.setEditable(True)
+        self.form.addRow("Game:", self.game)
+        lay_rows.addLayout(self.form)
+        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.buttons.setFont(game_font)
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        lay_rows.addWidget(self.buttons)
+
+    def get_data(self):
+        return self.pot.text(), self.game.currentText()
+
+    @staticmethod
+    def get_input(parent):
+        dialog = Game_dialog(parent)
+        result = dialog.exec_()
+        if result == QDialog.Accepted:
+            pot, game = dialog.get_data()
+            return (result, pot, game)
+        else:
+            return (result, " ", " ")
 
 
 class BingoWindow(QMainWindow):
@@ -228,7 +281,6 @@ class BingoWindow(QMainWindow):
         lay_col.addWidget(self.game_title)
 
         lay_row.addLayout(lay_col)
-        # lay_row.addWidget(self.game_title)
 
         # Currently called number at top of screen
         self.current_call = QLabel("")
@@ -240,7 +292,6 @@ class BingoWindow(QMainWindow):
         self.current_call.setStyleSheet(self.current_call_style)
         lay_row.addWidget(self.current_call)
 
-        print(f"camera = {camera_index}")
         if camera:
             # Bingo ball camera
             self.camera_feed = QLabel("")
@@ -282,7 +333,7 @@ class BingoWindow(QMainWindow):
                 call = QPushButton(f"{i:02}")
                 call.setFixedSize(self.scale_small_box, self.scale_small_box)
                 call.setFont(QFont("Arial", self.scale_small_text))
-                call.setStyleSheet("border: 2px solid")
+                call.setStyleSheet(self.uncalled_number_style)
                 call.clicked.connect(self.call_clicked)
                 lay_row.addWidget(call)
                 self.value_labels.append(call)
@@ -307,7 +358,7 @@ class BingoWindow(QMainWindow):
             QFont("Arial", self.scale_small_text - int(self.scale_small_text * 0.60))
         )
         lay_row.addWidget(label)
-        self.punchout = QLabel(" ")
+        self.punchout = QLabel("")
         self.punchout.setFont(
             QFont("Arial", self.scale_small_text - int(self.scale_small_text * 0.50))
         )
@@ -316,8 +367,11 @@ class BingoWindow(QMainWindow):
         spacing = QLabel(" ")
         spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         lay_row.addWidget(spacing)
+        font = self.font()
+        font.setPointSize(font.pointSize() + 7)
         self.change_title = QPushButton("Edit")
-        self.change_title.setStyleSheet("width: 75px ; " + self.button_style)
+        self.change_title.setFont(font)
+        self.change_title.setStyleSheet("width: 95px ; " + self.button_style)
         lay_row.addWidget(self.change_title)
         self.change_title.clicked.connect(self.new_title)
 
@@ -344,6 +398,7 @@ class BingoWindow(QMainWindow):
 
             layout = QHBoxLayout()
             self.pause = QPushButton("Call")
+            self.pause.setFont(font)
             self.pause.setStyleSheet("width: 75px ; " + self.button_style)
             layout.addWidget(self.pause)
             self.paused = True
@@ -354,21 +409,26 @@ class BingoWindow(QMainWindow):
             self.pause.clicked.connect(self.pause_toggle)
         else:
             self.punchout_button = QPushButton("Punch-out")
-            self.punchout_button.setStyleSheet("width: 75px ; " + self.button_style)
+            self.punchout_button.setFont(font)
+            self.punchout_button.setStyleSheet("width: 95px ; " + self.button_style)
             self.punchout_button.clicked.connect(self.add_punchout)
             lay_row.addWidget(self.punchout_button)
 
         self.record = QPushButton("Record")
-        self.record.setStyleSheet("width: 75px ; " + self.button_style)
+        self.record.setFont(font)
+        self.record.setStyleSheet("width: 95px ; " + self.button_style)
         self.record.clicked.connect(self.record_board)
         lay_row.addWidget(self.record)
 
         self.clear = QPushButton("Clear")
-        self.clear.setStyleSheet("width: 75px ; " + self.button_style)
+        self.clear.setFont(font)
+        self.clear.setStyleSheet("width: 95px ; " + self.button_style)
         self.clear.clicked.connect(self.clear_board)
         lay_row.addWidget(self.clear)
+
         self.done = QPushButton("Exit")
-        self.done.setStyleSheet("width: 75px ; " + self.button_style)
+        self.done.setFont(font)
+        self.done.setStyleSheet("width: 95px ; " + self.button_style)
         self.done.clicked.connect(self.done_with_game)
         lay_row.addWidget(self.done)
         lay_rows.addLayout(lay_row)
@@ -409,7 +469,11 @@ class BingoWindow(QMainWindow):
     def add_punchout(self):
         current = self.current_call.text()
         if len(current) > 1:
-            self.punchout.setText(self.punchout.text() + " " + current)
+            if len(self.punchout.text().split()) == 4:
+                divider = "\n"
+            else:
+                divider = " "
+            self.punchout.setText(self.punchout.text() + divider + current)
 
     def new_title(self):
         """
@@ -418,9 +482,31 @@ class BingoWindow(QMainWindow):
         the screen. This can be used for a greeting, or to
         announce a type of game (Four Corners, Blackout, etc.)
         """
-        text, ok = QInputDialog.getText(self, "Game", "Enter new game description:")
-        if ok:
+        ok, pot, game = Game_dialog.get_input(self)
+        if ok == QDialog.Accepted:
+            description = ""
+            if pot:
+                description = f"${int(pot)} - "
+            description += game
+            try:
+                addl = palettes["schedule"][game]
+                description += "\n" + addl
+            except KeyError:
+                ...
+            self.game_title.setText(description)
+        """
+        # description = QInputDialog()
+        description.setStyleSheet("QLabel QLineEdit {font-size: 24px}" + self.board_style)
+        # description.setStyleSheet("QLabel QLineEdit {font: 'Arial' 24px")
+        description.setWindowTitle("Game")
+        # description.setStyleSheet("QPushButton " + self.button_style)
+        description.setLabelText("Enter a new game description:")
+        # font = QFont("Arial", 18)  # Font name and point size
+        # description.setFont(font)
+        if description.exec_():
+            text = description.getValue()
             self.game_title.setText(text)
+        """
 
     def call_clicked(self):
         """
