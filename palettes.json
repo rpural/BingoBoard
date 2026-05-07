@@ -1,4 +1,25 @@
 {
+  "schedule": {
+    "Custom message": " ",
+    "1. Popeye": "down the B column, & the top two I column boxes",
+    "2. Straight Bingo": "four corners allowed",
+    "3. Horizontal Bingo": " ",
+    "4. Diagonal Bingo": " ",
+    "5. Straight Bingo": "four corners allowed",
+    "6. Six Pack": "may use free space",
+    "7. Postage Stamp": "top right corner cluster",
+    "8. Any Two Clusters": "must mark eight boxes, free space counts",
+    "9. Bonanza": "cover-all",
+    "Dabber Game": " ",
+    "10. Winner's Choice": "any two Bingos, corners or clusters count",
+    "11. Two Straight Bingos": "no clusters or corners",
+    "12. No!": "Down the N column & the top O",
+    "13. Straight Bingo": "clusters and corners count",
+    "14. Punch-Out": "straight Bingo, no clusters or corners",
+    "15. Winner's Choice": "any two Bingos, clusters, corners count",
+    "16. Triple Winner's Choice": "any three Bingos, clusters, corners count",
+    "17. Cover-All": " "
+  },
   "default": {
     "board_style": "color: black ; background-color: dimgray ; margin: 10",
     "current_call_style": "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge",
@@ -16,6 +37,15 @@
     "called_blink_style": "color: black ; background: #8C5400 ; border: 2px solid",
     "button_style": "background-color: #D98200",
     "slider_style": "background-color: #D98200"
+  },
+  "cinco": {
+    "board_style": "color: black; background-color: white; margin: 10",
+    "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
+    "uncalled_number_style": "color: white; background-color: #CE1126; border: 2px solid",
+    "called_number_style": "color: white ; background: #006847 ; border: 2px solid",
+    "called_blink_style": "color: black ; background: #00FF00 ; border: 2px solid",
+    "button_style": "color: white ; background-color: #006847",
+    "slider_style": "background-color: #006847"
   },
   "summertime": {
     "board_style": "color: #0ea7b5; background-color: #ffbe4f; margin: 10",
