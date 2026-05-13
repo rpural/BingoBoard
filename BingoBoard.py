@@ -1,7 +1,5 @@
 #! /usr/bin/env python3
 
-#! /usr/bin/env python3
-
 import argparse
 import datetime
 import json
@@ -19,7 +17,6 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -486,7 +483,11 @@ class BingoWindow(QMainWindow):
         if ok == QDialog.Accepted:
             description = ""
             if pot:
-                description = f"${int(pot)} - "
+                try:
+                    description = f"${int(pot)} - "
+                except ValueError as e:
+                    print(e)
+                    description = f"{pot} - "
             description += game
             try:
                 addl = palettes["schedule"][game]
@@ -660,6 +661,7 @@ if __name__ == "__main__":
     """
 
     palettes = load_palettes("palettes.json")
+    palette_list = ", ".join([i for i in palettes.keys() if i != "schedule"])
 
     parser = argparse.ArgumentParser(
         prog="BingobBoard",
@@ -669,7 +671,7 @@ if __name__ == "__main__":
 
         For manual games, called numbers are chosen by clicking on the number
         on the screen.""",
-        epilog="To run, type ./BingoBoard.py",
+        epilog="To run, type './BingoBoard.py', followed by your selected options.",
     )
 
     # accept the name of a color palette to use. Defaults to "default"
@@ -680,7 +682,7 @@ if __name__ == "__main__":
         action="store",
         dest="palette_name",
         metavar='"color palette to use"',
-        help=f"Choose a pre-defined color palette to use on the display. Remains constant during program run. Choices are {palettes.keys()}",
+        help=f"Choose a pre-defined color palette to use on the display. Remains constant during program run. Choices are {palette_list}",
     )
 
     # Accept a title for the top of the screen. This would normally be the
@@ -691,7 +693,7 @@ if __name__ == "__main__":
         default="Knights of Columbus 3660",
         action="store",
         dest="screen_title_text",
-        metavar='"top title or message"',
+        metavar='"organization title or message"',
         help="Permanent title displayed on the upper left of the screen. Remains constant during program run.",
     )
 
@@ -703,8 +705,8 @@ if __name__ == "__main__":
         default="Welcome",
         action="store",
         dest="game_title_text",
-        metavar='"bottom title or message"',
-        help="Variable title displayed in the bottom of the screen. Can be changed via Edit button.",
+        metavar='"game title or message"',
+        help="Title displayed iinitially in the top of the screen. Can be changed via Edit button.",
     )
 
     parser.add_argument(
