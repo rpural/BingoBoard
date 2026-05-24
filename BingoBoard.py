@@ -9,10 +9,11 @@ import imutils
 from PyQt5.QtCore import QSize, Qt, QThread, QTimer
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.QtGui import QFont, QFontMetrics, QImage, QPixmap
+from PyQt5.QtGui import QFont, QFontMetrics, QGuiApplication, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
+    QDesktopWidget,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -30,86 +31,154 @@ from PyQt5.QtWidgets import (
 import bingogame  # local to project
 from palettes import load_palettes, palettes  # local to project
 
-BingoBoard_version = "10.0"  # the John Hasty version
+BingoBoard_version = "11.0"
 
 large_box_dimention = 280  # default large box dimention
 
 
-"""
-def enumerate_cameras(max_devices=3):
-    try:
-        from pyusbcameraindex import enumerate_usb_video_devices_windows
+import faulthandler
 
-        # List the devices.
-        cameras = enumerate_usb_video_devices_windows()
-    except ImportError:
-        import cv2_enumerate_cameras as cvec
-
-        cameras = cvec.enumerate_cameras()
-
-    for device in cameras:
-        print(f"-> {device.index} {device.name}")
-
-    return cameras
-"""
+faulthandler.enable()
 
 
 class CameraThread(QThread):
     frame_signal = Signal(QImage)
+    paused = False
 
     def __init__(self):
         super().__init__()
-        """
-        self.cameras = enumerate_cameras()
-        for cam in self.cameras:
-            print(f"in for-> {cam}")
-
-            if "Lenovo" in cam.name:
-                print(f"cam-> {type(cam)} {cam}")
-                self.camera_index = cam.index
-                break
-        else:
-            print("default camera used")
-            self.camera_index = 0
-        print(f"camera index: {self.camera_index}")
-        self.old_camera = -1
-        """
         self.cap = None
 
     def run(self):
         self.cap = cv2.VideoCapture(camera_index)
         # self.old_camera = self.camera_index
         while True:
-            _, frame = self.cap.read()
-            frame = self.cvimage_to_label(frame)
-            self.frame_signal.emit(frame)
-
-    '''
-    def switch_camera(self):
-        """[TODO]:
-        Next three lines limits camera index to 0 or 1, as the isOpened()
-        function fails to work on a non-existant camera, but VideoCapture()
-        doesn't appear to return anything useful in that situation.
-        """
-        self.cap.release()
-        base_index = self.camera_index
-        while True:
-            self.camera_index += 1
-            if self.camera_index >= len(self.cameras):
-                self.camera_index = 0
-            self.cap = cv2.VideoCapture(self.camera_index)
-            if self.cap and self.cap.isOpened():
-                break
-            if self.camera_index == base_index:
-                return None
-        self.run()
-    '''
+            if not self.paused:
+                _, frame = self.cap.read()
+                frame = self.cvimage_to_label(frame)
+                self.frame_signal.emit(frame)
 
     def cvimage_to_label(self, image):
         image = imutils.resize(image, width=large_box_dimention)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = QImage(image, image.shape[1], image.shape[0], QImage.Format_RGB888)
         return image
+
+
+class UX_Experience:
+    """
+    Set the box sizes and font sizes for the large and small boxes on the screen,
+    initially, and when the screen size changes.
+    """
+
+    @staticmethod
+    def find_font_size(box_size, font_name, test_text, margin=30):
+        """
+        Given a fixed size box or width and a specified font, find the
+        largest font point size that could be used to render a given text.
+
+        box_size: the width of the box in pixels
+        font_name: the font to be used for the text
+        test_text: the sample text to be fitted. Should represent the widest expected
+        margin: the amount of pixels to be subtracted from the box_size
+        """
+        font_size = 12
+        font = QFont(font_name, font_size)
+        width = 0
+        while width < (box_size - margin):
+            font_size += 1
+            font = QFont(font_name, font_size)
+            metrics = QFontMetrics(font)
+            width = metrics.width(test_text)
+        font_size -= 3
+        # print(f">> font calc: {font_size}pt = ({test_text} in {box_size} = {width})")
+        return font_size
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.screen = QGuiApplication.primaryScreen()
+        self.screen = self.screen.availableGeometry()
+        self.screen = (
+            self.screen.width(),
+            self.screen.height(),
+        )  # these are the maximum bounds allowed
+        self.window = (
+            self.screen[0],
+            self.screen[1],
+        )  # initially match the screen size
+        print(f">> initial = {self.window}")
+
+        self._fontsize_cache = {}
+
+    @property
+    def large_box_size(self):
+        box_width = self.window[0] / 5
+        self._large_box_size = int(box_width)
+        return self._large_box_size
+
+    @property
+    def small_box_size(self):
+        box_width = self.window[0] / 20
+        self._small_box_size = int(box_width)
+        return self._small_box_size
+
+    def small_box_font(self, font, test="89"):
+        box = self.small_box_size
+        font_size = self.find_font_size(box, font, test)
+        # self._fontsize_cache[box] = font_size
+        return QFont(font, font_size)
+
+    def large_box_font(self, font, test="O89"):
+        box = self.large_box_size
+        font_size = self.find_font_size(box, font, test)
+        # self._fontsize_cache[box] = font_size
+        return QFont(font, font_size)
+
+    def large_title_font(self, font, test="89"):
+        box_font = self.small_box_font(font, test)
+        box_font.setPointSize(int(box_font.pointSize() * 0.90))
+        return box_font
+
+    def small_title_font(self, font, test="89"):
+        box_font = self.small_box_font(font, test)
+        box_font.setPointSize(int(box_font.pointSize() * 0.50))
+        return box_font
+
+    def ball_count_font(self, font, test="89"):
+        return self.small_box_font(font, test)
+
+    def punchout_font(self, font, test="89"):
+        box_font = self.small_box_font(font, test)
+        box_font.setPointSize(int(box_font.pointSize() * 0.50))
+        return box_font
+
+    def start_resize(self, newsize):
+        self.window = newsize
+        print(
+            f">> resize = {self.window} - large box = {self.parent.ux.large_box_size}, small box = {self.parent.ux.small_box_size}"
+        )
+        self.parent.current_call.setFixedWidth(self.parent.ux.large_box_size)
+        self.parent.current_call.setFixedHeight(self.parent.ux.large_box_size)
+        self.parent.current_call.setFont(
+            self.parent.ux.large_box_font("Times New Roman")
+        )
+        try:
+            self.parent.camera_feed.setFixedWidth(self.parent.ux.large_box_size)
+            self.parent.camera_feed.setFixedHeight(self.parent.ux.large_box_size)
+        except NameError:
+            ...
+
+        for cel in self.parent.value_labels[1:]:
+            cel.setFixedSize(
+                self.parent.ux.small_box_size, self.parent.ux.small_box_size
+            )
+            cel.setFont(self.parent.ux.small_box_font("Arial"))
+
+        self.parent.screen_title.setFont(self.parent.ux.small_title_font("Arial"))
+        self.parent.game_title.setFont(self.parent.ux.large_title_font("Arial"))
+
+        self.parent.punchout.setFont(self.parent.ux.punchout_font("Arial"))
+        # print(f">> font sizes = ({self.parent.ux.large_box_font("Times New Roman", "G89")}, {self.parent.ux.small_box_font("Arial", "89")}, {self.parent.ux.large_title_font("Arial", "89")}, {self.parent.ux.small_title_font("Arial", "89")})")
 
 
 class Game_dialog(QDialog):
@@ -174,27 +243,6 @@ class BingoWindow(QMainWindow):
     It can be paused and restarted.
     """
 
-    def find_font_size(self, box_size, font_name, test_text, margin=30):
-        """
-        Given a fixed size box or width and a specified font, find the
-        largest font that could be used to render a given text.
-
-        box_size: the width of the box in pixels
-        font_name: the font to be used for the text
-        test_text: the sample text to be fitted. Should represent the widest expected
-        margin: the amount of pixels to be subtracted from the box_size
-        """
-        font_size = 12
-        font = QFont(font_name, font_size)
-        width = 0
-        while width < (box_size - margin):
-            font_size += 3
-            font = QFont(font_name, font_size)
-            metrics = QFontMetrics(font)
-            width = metrics.width(test_text)
-        font_size -= 3
-        return font_size
-
     def __init__(self, palette_name="default", automatic=False):
         """
         This method creates the layout of the main window.
@@ -210,26 +258,8 @@ class BingoWindow(QMainWindow):
         """
         super().__init__()
 
-        # Get the initial window size
-        window_size = self.screen().size()
-        self.window_width = window_size.width()
-        self.window_height = window_size.height()
-
-        self.scale_large_box = int(0.15 * self.window_width)
-        global large_box_dimention
-        large_box_dimention = self.scale_large_box
-        self.scale_large_text = int(0.07 * self.window_width)
-        self.scale_small_box = int(0.05 * self.window_width)
-        self.scale_small_text = int(0.024 * self.window_width)
-        self.scale_large_text = self.find_font_size(
-            self.scale_large_box, "Times New Roman", "G89"
-        )
-        self.scale_small_text = self.find_font_size(
-            self.scale_small_box, "Helvetica", "89"
-        )
-        print(
-            f"scales: (lg box: {self.scale_large_box}, lg text: {self.scale_large_text}), (sm box: {self.scale_small_box}, sm text: {self.scale_small_text})"
-        )
+        # [Debug] try out UX_Experience
+        self.ux = UX_Experience(self)
 
         palette = palettes[palette_name]
         self.board_style = palette["board_style"]
@@ -247,8 +277,7 @@ class BingoWindow(QMainWindow):
         ]
         self.current_game = bingogame.BingoGame()
 
-        self.setWindowTitle("Bingo Board")
-        # self.resize(self.screen().size())
+        self.setWindowTitle("Bingo")
         self.setStyleSheet(self.board_style)
 
         lay_rows = QVBoxLayout()
@@ -262,38 +291,37 @@ class BingoWindow(QMainWindow):
         lay_col = QVBoxLayout()
         # Organization title
         self.screen_title = QLabel(screen_title_text)
-        self.screen_title.setFont(QFont("Times New Roman", 25))
+        self.screen_title.setFont(self.ux.small_title_font("Times New Roman"))
         self.screen_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.screen_title.setAlignment(Qt.AlignLeft)
         lay_col.addWidget(self.screen_title)
 
         # Game title at top center of screen
         self.game_title = QLabel(game_title_text)
-        self.game_title.setFont(QFont("Arial", 50))
+        self.game_title.setFont(self.ux.large_title_font("Arial"))
         self.game_title.setAlignment(Qt.AlignCenter)
         self.game_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.game_title.setAlignment(Qt.AlignCenter)
         self.game_title.setWordWrap(True)
-        # self.game_title.setFixedWidth(1000)
         lay_col.addWidget(self.game_title)
 
         lay_row.addLayout(lay_col)
 
         # Currently called number at top of screen
         self.current_call = QLabel("")
-        self.current_call.setFixedWidth(self.scale_large_box)
-        self.current_call.setFixedHeight(self.scale_large_box)
-        self.current_call.setFont(QFont("Times New Roman", self.scale_large_text))
+        self.current_call.setFixedWidth(self.ux.large_box_size)
+        self.current_call.setFixedHeight(self.ux.large_box_size)
+        self.current_call.setFont(self.ux.large_box_font("Times New Roman"))
         self.current_call.setAlignment(Qt.AlignCenter)
-        # [LINK] current_call_style
+        # current_call_style
         self.current_call.setStyleSheet(self.current_call_style)
         lay_row.addWidget(self.current_call)
 
         if camera:
             # Bingo ball camera
             self.camera_feed = QLabel("")
-            self.camera_feed.setFixedWidth(self.scale_large_box)
-            self.camera_feed.setFixedHeight(self.scale_large_box)
+            self.camera_feed.setFixedWidth(self.ux.large_box_size)
+            self.camera_feed.setFixedHeight(self.ux.large_box_size)
             self.camera_feed.setStyleSheet(
                 "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge"
             )
@@ -303,12 +331,6 @@ class BingoWindow(QMainWindow):
             self.camera_slider = QSlider(Qt.Vertical)
             self.camera_slider.valueChanged[int].connect(self.changeCameraZoom)
             camera_controls.addWidget(self.camera_slider)
-            """
-            self.switch_camera = QPushButton("📹")
-            self.switch_camera.setStyleSheet("padding: 5px ; " + self.button_style)
-            self.switch_camera.clicked.connect(self.changeCameraIndex)
-            camera_controls.addWidget(self.switch_camera)
-            """
 
             self.camera_thread = CameraThread()
             self.camera_thread.frame_signal.connect(self.setImage)
@@ -319,8 +341,8 @@ class BingoWindow(QMainWindow):
         for base, row in enumerate(("B", "I", "N", "G", "O")):
             lay_row = QHBoxLayout()
             row_label = QLabel(row)
-            row_label.setFixedSize(self.scale_small_box, self.scale_small_box)
-            row_label.setFont(QFont("Arial", self.scale_small_text))
+            row_label.setFixedSize(self.ux.small_box_size, self.ux.small_box_size)
+            row_label.setFont(self.ux.small_box_font("Times New Roman"))
             row_label.setStyleSheet(
                 f"background-color: {('lightblue', 'red', 'white', 'lightgreen', 'yellow')[base]} ; border: 2px solid"
             )
@@ -328,37 +350,31 @@ class BingoWindow(QMainWindow):
             lay_row.addWidget(row_label)
             for i in range(base * 15 + 1, base * 15 + 16):
                 call = QPushButton(f"{i:02}")
-                call.setFixedSize(self.scale_small_box, self.scale_small_box)
-                call.setFont(QFont("Arial", self.scale_small_text))
+                call.setFixedSize(self.ux.small_box_size, self.ux.small_box_size)
+                call.setFont(self.ux.small_box_font("Arial"))
                 call.setStyleSheet(self.uncalled_number_style)
                 call.clicked.connect(self.call_clicked)
                 lay_row.addWidget(call)
                 self.value_labels.append(call)
-            lay_row.setSpacing(10)
+                # lay_row.setSpacing(10)
             lay_rows.addLayout(lay_row)
 
         lay_row = QHBoxLayout()
-        lay_row.setSpacing(15)
+        # lay_row.setSpacing(15)
 
         self.ball_count = QLabel("[ 0 ]")
         self.ball_count.setStyleSheet("width: 75px")
-        self.ball_count.setFont(
-            QFont("Arial", self.scale_small_text - int(self.scale_small_text * 0.09))
-        )
+        self.ball_count.setFont(self.ux.ball_count_font("Arial"))
         lay_row.addWidget(self.ball_count)
 
         spacing = QLabel(" ")
         spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         lay_row.addWidget(spacing)
         label = QLabel("punch-out:")
-        label.setFont(
-            QFont("Arial", self.scale_small_text - int(self.scale_small_text * 0.60))
-        )
+        label.setFont(self.ux.punchout_font("Arial"))
         lay_row.addWidget(label)
         self.punchout = QLabel("")
-        self.punchout.setFont(
-            QFont("Arial", self.scale_small_text - int(self.scale_small_text * 0.50))
-        )
+        self.punchout.setFont(self.ux.punchout_font("Arial"))
         lay_row.addWidget(self.punchout)
 
         spacing = QLabel(" ")
@@ -388,7 +404,7 @@ class BingoWindow(QMainWindow):
             width = self.timing.sizeHint().width()
             self.timing.setFixedWidth(width)
             self.timing.setAlignment(Qt.AlignHCenter)
-            self.timing.setStyleSheet("width: 75px ; " + self.button_style)
+            self.timing.setStyleSheet("width: 95px ; " + self.button_style)
             layout.addWidget(self.timing)
             self.call_time = 0
             lay_row.addLayout(layout)
@@ -396,7 +412,7 @@ class BingoWindow(QMainWindow):
             layout = QHBoxLayout()
             self.pause = QPushButton("Call")
             self.pause.setFont(font)
-            self.pause.setStyleSheet("width: 75px ; " + self.button_style)
+            self.pause.setStyleSheet("width: 95px ; " + self.button_style)
             layout.addWidget(self.pause)
             self.paused = True
             lay_row.addLayout(layout)
@@ -407,13 +423,13 @@ class BingoWindow(QMainWindow):
         else:
             self.punchout_button = QPushButton("Punch-out")
             self.punchout_button.setFont(font)
-            self.punchout_button.setStyleSheet("width: 95px ; " + self.button_style)
+            self.punchout_button.setStyleSheet("width: 125px ; " + self.button_style)
             self.punchout_button.clicked.connect(self.add_punchout)
             lay_row.addWidget(self.punchout_button)
 
         self.record = QPushButton("Record")
         self.record.setFont(font)
-        self.record.setStyleSheet("width: 95px ; " + self.button_style)
+        self.record.setStyleSheet("width: 125px ; " + self.button_style)
         self.record.clicked.connect(self.record_board)
         lay_row.addWidget(self.record)
 
@@ -451,17 +467,15 @@ class BingoWindow(QMainWindow):
                 self.blink_button_style = self.called_blink_style
 
     def resizeEvent(self, event):
+        self.camera_thread.paused = True
+        super().resizeEvent(event)
+        self.ux.start_resize((event.size().width(), event.size().height()))
         self.window_width = event.size().width()
         self.window_height = event.size().height()
-        # self.resize(self.window_width, self.window_height)
-        # print(f"Resized to: {self.window_width}x{self.window_height}")
-        super().resizeEvent(event)
+        self.camera_thread.paused = False
 
     def changeCameraZoom(self, value):
         self.camera_zoom = value
-
-    def changeCameraIndex(self):
-        self.camera_thread.switch_camera()
 
     def add_punchout(self):
         current = self.current_call.text()
@@ -495,19 +509,6 @@ class BingoWindow(QMainWindow):
             except KeyError:
                 ...
             self.game_title.setText(description)
-        """
-        # description = QInputDialog()
-        description.setStyleSheet("QLabel QLineEdit {font-size: 24px}" + self.board_style)
-        # description.setStyleSheet("QLabel QLineEdit {font: 'Arial' 24px")
-        description.setWindowTitle("Game")
-        # description.setStyleSheet("QPushButton " + self.button_style)
-        description.setLabelText("Enter a new game description:")
-        # font = QFont("Arial", 18)  # Font name and point size
-        # description.setFont(font)
-        if description.exec_():
-            text = description.getValue()
-            self.game_title.setText(text)
-        """
 
     def call_clicked(self):
         """
@@ -611,6 +612,14 @@ class BingoWindow(QMainWindow):
         self.call_timer.stop()  # end current game
         if len(self.current_game):
             self.current_game.game_log(logfile_name, game=self.game_title.text())
+        self.record.setText("Record ✅")
+        self.record_timer = QTimer()
+        self.record_timer.timeout.connect(self.record_timer_pop)
+        self.record_timer.start(5000)
+
+    def record_timer_pop(self):
+        self.record_timer.stop()
+        self.record.setText("Record")
 
     def clear_board(self):
         """
@@ -638,7 +647,7 @@ class BingoWindow(QMainWindow):
         game if there are called numbers, and exit the
         program.
         """
-        self.clear_board()
+        self.record_board()
         exit(0)
 
     @Slot(QImage)
@@ -755,8 +764,9 @@ if __name__ == "__main__":
     app = QApplication([])
 
     window = BingoWindow(args.palette_name, automatic)
-    # window.showFullScreen()
-    # window.showMaximized()
     window.show()
+
+    exit(app.exec_())
+
 
     exit(app.exec_())
