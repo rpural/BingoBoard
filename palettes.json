@@ -38,6 +38,15 @@
     "button_style": "background-color: #D98200",
     "slider_style": "background-color: #D98200"
   },
+  "raceday": {
+    "board_style": "color: black; background-color: white; margin: 10",
+    "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
+    "uncalled_number_style": "color: black; background-color: white; border: 2px solid",
+    "called_number_style": "color: white ; background: black ; border: 2px solid",
+    "called_blink_style": "color: black ; background: gray ; border: 2px solid",
+    "button_style": "background-color: green",
+    "slider_style": "background-color: green"
+  },
   "cinco": {
     "board_style": "color: black; background-color: white; margin: 10",
     "current_call_style": "color: black ; background-color: ghostwhite ; border-color: black ; border-radius: 8 ; border: 8px ridge",
@@ -111,3 +120,4 @@
     "slider_style": "color: white ; background-color: #D90000"
   }
 }
+
