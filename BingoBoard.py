@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import (
 import bingogame  # local to project
 from palettes import load_palettes, palettes  # local to project
 
-BingoBoard_version = "11.0"
+BingoBoard_version = "12.0"
 
 large_box_dimention = 280  # default large box dimention
 
@@ -136,12 +136,12 @@ class UX_Experience:
 
     def large_title_font(self, font, test="89"):
         box_font = self.small_box_font(font, test)
-        box_font.setPointSize(int(box_font.pointSize() * 0.90))
+        box_font.setPointSize(int(box_font.pointSize() * 1.10))
         return box_font
 
     def small_title_font(self, font, test="89"):
         box_font = self.small_box_font(font, test)
-        box_font.setPointSize(int(box_font.pointSize() * 0.50))
+        box_font.setPointSize(int(box_font.pointSize() * 0.75))
         return box_font
 
     def ball_count_font(self, font, test="89"):
@@ -149,7 +149,7 @@ class UX_Experience:
 
     def punchout_font(self, font, test="89"):
         box_font = self.small_box_font(font, test)
-        box_font.setPointSize(int(box_font.pointSize() * 0.50))
+        box_font.setPointSize(int(box_font.pointSize() * 0.65))
         return box_font
 
     def start_resize(self, newsize):
@@ -191,6 +191,11 @@ class Game_dialog(QDialog):
 
     If game is not found in the schedule, then it is a custom
     message to be displayed without a pot or description added
+
+    Game description is a list, the first part of which is the
+    added descriptive message, and the second part is a 0 or 1.
+    The 1 would indicate a Punch-out game, and the final ball
+    called will be added to the line at the bottom of the screen.
     """
 
     def __init__(self, parent):
@@ -376,6 +381,7 @@ class BingoWindow(QMainWindow):
         self.punchout = QLabel("")
         self.punchout.setFont(self.ux.punchout_font("Arial"))
         lay_row.addWidget(self.punchout)
+        self.punchout_game = 0
 
         spacing = QLabel(" ")
         spacing.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -503,12 +509,15 @@ class BingoWindow(QMainWindow):
                     print(e)
                     description = f"{pot} - "
             description += game
+            punchout = 0
             try:
-                addl = palettes["schedule"][game]
+                addl = palettes["schedule"][game][0]
+                punchout = palettes["schedule"][game][1]
                 description += "\n" + addl
             except KeyError:
                 ...
             self.game_title.setText(description)
+            self.punchout_game = punchout
 
     def call_clicked(self):
         """
@@ -613,6 +622,8 @@ class BingoWindow(QMainWindow):
         if len(self.current_game):
             self.current_game.game_log(logfile_name, game=self.game_title.text())
         self.record.setText("Record ✅")
+        if self.punchout_game:
+            self.add_punchout()
         self.record_timer = QTimer()
         self.record_timer.timeout.connect(self.record_timer_pop)
         self.record_timer.start(5000)
@@ -631,6 +642,8 @@ class BingoWindow(QMainWindow):
         self.call_timer.stop()  # end current game
         if len(self.current_game):
             self.current_game.game_log(logfile_name, game=self.game_title.text())
+        if self.punchout_game:
+            self.add_punchout()
         self.current_game = bingogame.BingoGame()
         # reset the board
         self.blink_timer.stop()
@@ -765,8 +778,5 @@ if __name__ == "__main__":
 
     window = BingoWindow(args.palette_name, automatic)
     window.show()
-
-    exit(app.exec_())
-
 
     exit(app.exec_())
