@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import (
 import bingogame  # local to project
 from palettes import load_palettes, palettes  # local to project
 
-BingoBoard_version = "12.0"
+BingoBoard_version = "12.2"
 
 large_box_dimention = 280  # default large box dimention
 
@@ -624,12 +624,9 @@ class BingoWindow(QMainWindow):
         self.record.setText("Record ✅")
         if self.punchout_game:
             self.add_punchout()
-        self.record_timer = QTimer()
-        self.record_timer.timeout.connect(self.record_timer_pop)
-        self.record_timer.start(5000)
+        QTimer().singleShot(5000, self.record_timer_pop)
 
     def record_timer_pop(self):
-        self.record_timer.stop()
         self.record.setText("Record")
 
     def clear_board(self):
