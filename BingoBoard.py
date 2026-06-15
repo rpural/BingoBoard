@@ -35,10 +35,12 @@ BingoBoard_version = "12.2"
 
 large_box_dimention = 280  # default large box dimention
 
-
+"""
+# used to debug segfaults. Not required by the program
 import faulthandler
 
 faulthandler.enable()
+"""
 
 
 class CameraThread(QThread):
@@ -51,7 +53,6 @@ class CameraThread(QThread):
 
     def run(self):
         self.cap = cv2.VideoCapture(camera_index)
-        # self.old_camera = self.camera_index
         while True:
             if not self.paused:
                 _, frame = self.cap.read()
@@ -91,7 +92,6 @@ class UX_Experience:
             metrics = QFontMetrics(font)
             width = metrics.width(test_text)
         font_size -= 3
-        # print(f">> font calc: {font_size}pt = ({test_text} in {box_size} = {width})")
         return font_size
 
     def __init__(self, parent):
@@ -106,9 +106,6 @@ class UX_Experience:
             self.screen[0],
             self.screen[1],
         )  # initially match the screen size
-        print(f">> initial = {self.window}")
-
-        self._fontsize_cache = {}
 
     @property
     def large_box_size(self):
@@ -125,13 +122,11 @@ class UX_Experience:
     def small_box_font(self, font, test="89"):
         box = self.small_box_size
         font_size = self.find_font_size(box, font, test)
-        # self._fontsize_cache[box] = font_size
         return QFont(font, font_size)
 
     def large_box_font(self, font, test="O89"):
         box = self.large_box_size
         font_size = self.find_font_size(box, font, test)
-        # self._fontsize_cache[box] = font_size
         return QFont(font, font_size)
 
     def large_title_font(self, font, test="89"):
@@ -154,9 +149,6 @@ class UX_Experience:
 
     def start_resize(self, newsize):
         self.window = newsize
-        print(
-            f">> resize = {self.window} - large box = {self.parent.ux.large_box_size}, small box = {self.parent.ux.small_box_size}"
-        )
         self.parent.current_call.setFixedWidth(self.parent.ux.large_box_size)
         self.parent.current_call.setFixedHeight(self.parent.ux.large_box_size)
         self.parent.current_call.setFont(
@@ -178,7 +170,6 @@ class UX_Experience:
         self.parent.game_title.setFont(self.parent.ux.large_title_font("Arial"))
 
         self.parent.punchout.setFont(self.parent.ux.punchout_font("Arial"))
-        # print(f">> font sizes = ({self.parent.ux.large_box_font("Times New Roman", "G89")}, {self.parent.ux.small_box_font("Arial", "89")}, {self.parent.ux.large_title_font("Arial", "89")}, {self.parent.ux.small_title_font("Arial", "89")})")
 
 
 class Game_dialog(QDialog):
@@ -314,8 +305,7 @@ class BingoWindow(QMainWindow):
 
         # Currently called number at top of screen
         self.current_call = QLabel("")
-        self.current_call.setFixedWidth(self.ux.large_box_size)
-        self.current_call.setFixedHeight(self.ux.large_box_size)
+        self.current_call.setFixedSize(self.ux.large_box_size, self.ux.large_box_size)
         self.current_call.setFont(self.ux.large_box_font("Times New Roman"))
         self.current_call.setAlignment(Qt.AlignCenter)
         # current_call_style
@@ -325,8 +315,9 @@ class BingoWindow(QMainWindow):
         if camera:
             # Bingo ball camera
             self.camera_feed = QLabel("")
-            self.camera_feed.setFixedWidth(self.ux.large_box_size)
-            self.camera_feed.setFixedHeight(self.ux.large_box_size)
+            self.camera_feed.setFixedSize(
+                self.ux.large_box_size, self.ux.large_box_size
+            )
             self.camera_feed.setStyleSheet(
                 "color: black ; background-color: silver ; border-color: black ; border-radius: 8 ; border: 8px ridge"
             )
@@ -490,7 +481,8 @@ class BingoWindow(QMainWindow):
                 divider = "\n"
             else:
                 divider = " "
-            self.punchout.setText(self.punchout.text() + divider + current)
+            punchout_text = (self.punchout.text() + divider + current).strip()
+            self.punchout.setText(punchout_text)
 
     def new_title(self):
         """
@@ -567,7 +559,6 @@ class BingoWindow(QMainWindow):
         the list of called numbers.
         """
         call_value = next(self.current_game)
-        # [LINK] called_number_style
         window.value_labels[call_value].setStyleSheet(self.called_number_style)
         window.current_call.setText(self.current_game.ball_name(call_value))
 
@@ -716,8 +707,8 @@ if __name__ == "__main__":
         help="Permanent title displayed on the upper left of the screen. Remains constant during program run.",
     )
 
-    # Accept a title for the bottom of the screen. This would normally be
-    # the game type, or a message.
+    # Accept a title for the top center of the screen.
+    # This will be replaced by the game type or other message.
     parser.add_argument(
         "-t",
         "--title",
@@ -740,6 +731,7 @@ if __name__ == "__main__":
         "-i",
         "--index",
         action="store",
+        default=0,
         dest="camera_index",
         help="Index of camera to be used.",
     )
@@ -776,4 +768,4 @@ if __name__ == "__main__":
     window = BingoWindow(args.palette_name, automatic)
     window.show()
 
-    exit(app.exec_())
+    exit(app.exec())
